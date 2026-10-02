@@ -1,1 +1,0 @@
-{"version":3,"file":"index.js","sourceRoot":"../../../../../src","sources":["hooks/private/useBoolean/index.ts"],"names":[],"mappings":"AAAA,OAAO,EAAC,UAAU,EAAC,wBAAqB","sourcesContent":["export {useBoolean} from './useBoolean';\nexport type {UseBooleanResult} from './useBoolean';\n"]}

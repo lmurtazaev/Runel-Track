@@ -1,1 +1,0 @@
-{"version":3,"file":"index.js","sourceRoot":"../../../../src","sources":["components/ActionTooltip/index.ts"],"names":[],"mappings":"AAAA,OAAO,EAAC,aAAa,EAAC,2BAAwB","sourcesContent":["export {ActionTooltip} from './ActionTooltip';\nexport type {ActionTooltipProps} from './ActionTooltip';\n"]}

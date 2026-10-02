@@ -1,1 +1,0 @@
-{"version":3,"file":"index.js","sourceRoot":"../../../../src","sources":["components/TableColumnSetup/index.ts"],"names":[],"mappings":"AAAA,sCAAmC","sourcesContent":["export * from './TableColumnSetup';\n"]}

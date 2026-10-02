@@ -1,1 +1,0 @@
-{"version":3,"file":"constants.js","sourceRoot":"../../../../src","sources":["components/Slider/constants.ts"],"names":[],"mappings":"AAAA,MAAM,CAAC,MAAM,gBAAgB,GAAG,EAAC,IAAI,EAAE,EAAE,EAAE,KAAK,EAAE,EAAE,EAAE,SAAS,EAAE,EAAE,EAAC,CAAC","sourcesContent":["export const CLEAR_MARK_STYLE = {left: '', right: '', transform: ''};\n"]}

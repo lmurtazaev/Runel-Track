@@ -1,1 +1,0 @@
-{"version":3,"file":"index.js","sourceRoot":"../../../../src","sources":["components/CopyToClipboard/index.ts"],"names":[],"mappings":";;;;AAAA,+DAAkC;AAElC,0CAA2D;AAAnD,+GAAA,QAAQ,OAAuB","sourcesContent":["export * from './CopyToClipboard';\nexport type {CopyToClipboardStatus, CopyToClipboardProps} from './types';\nexport {copyText as copyTextToClipboard} from './copyText';\n"]}

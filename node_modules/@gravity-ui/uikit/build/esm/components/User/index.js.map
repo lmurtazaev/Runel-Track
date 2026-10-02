@@ -1,1 +1,0 @@
-{"version":3,"file":"index.js","sourceRoot":"../../../../src","sources":["components/User/index.ts"],"names":[],"mappings":"AACA,OAAO,EAAC,iBAAiB,EAAE,MAAM,EAAC,uBAAoB;AACtD,OAAO,EAAC,IAAI,EAAC,kBAAe","sourcesContent":["export type {UserSize, UserProps} from './types';\nexport {DEFAULT_USER_SIZE, UserQa} from './constants';\nexport {User} from './User';\n"]}

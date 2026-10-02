@@ -1,1 +1,0 @@
-{"version":3,"file":"legacy.js","sourceRoot":"../../src","sources":["legacy.ts"],"names":[],"mappings":"AAAA,6CAAoC","sourcesContent":["export * from './components/legacy';\n"]}

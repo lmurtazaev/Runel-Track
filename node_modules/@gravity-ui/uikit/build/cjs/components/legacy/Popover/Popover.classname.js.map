@@ -1,1 +1,0 @@
-{"version":3,"file":"Popover.classname.js","sourceRoot":"../../../../../src","sources":["components/legacy/Popover/Popover.classname.ts"],"names":[],"mappings":";;;AAAA,0CAAqC;AAExB,QAAA,SAAS,GAAG,IAAA,UAAK,EAAC,gBAAgB,CAAC,CAAC","sourcesContent":["import {block} from '../../utils/cn';\n\nexport const cnPopover = block('popover-legacy');\n"]}

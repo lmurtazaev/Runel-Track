@@ -1,1 +1,0 @@
-{"version":3,"file":"index.js","sourceRoot":"../../../../src","sources":["hooks/useViewportSize/index.ts"],"names":[],"mappings":"AAAA,OAAO,EAAC,eAAe,EAAC,6BAA0B","sourcesContent":["export {useViewportSize} from './useViewportSize';\nexport type {UseViewportSizeResult} from './useViewportSize';\n"]}

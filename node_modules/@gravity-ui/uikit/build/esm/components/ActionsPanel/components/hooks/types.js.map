@@ -1,1 +1,0 @@
-{"version":3,"file":"types.js","sourceRoot":"../../../../../../src","sources":["components/ActionsPanel/components/hooks/types.ts"],"names":[],"mappings":"","sourcesContent":["export type VisibilityMap = Record<string, boolean>;\n"]}

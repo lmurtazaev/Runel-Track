@@ -1,1 +1,0 @@
-{"version":3,"file":"index.js","sourceRoot":"../../../../../src","sources":["hooks/private/useUpdateEffect/index.ts"],"names":[],"mappings":";;;AAAA,wDAAkD;AAA1C,kHAAA,eAAe,OAAA","sourcesContent":["export {useUpdateEffect} from './useUpdateEffect';\n"]}

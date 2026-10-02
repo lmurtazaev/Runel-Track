@@ -1,1 +1,0 @@
-{"version":3,"file":"index.js","sourceRoot":"../../../../src","sources":["components/legacy/index.ts"],"names":[],"mappings":";;;AAAA,6DAA0B;AAC1B,0DAAuB;AACvB,iEAA8B","sourcesContent":["export * from './Popover';\nexport * from './Tabs';\nexport * from './Breadcrumbs';\n"]}

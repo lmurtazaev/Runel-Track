@@ -1,1 +1,0 @@
-{"version":3,"file":"index.js","sourceRoot":"../../../../src","sources":["hooks/useUniqId/index.ts"],"names":[],"mappings":"AAAA,OAAO,EAAC,SAAS,EAAC,uBAAoB","sourcesContent":["export {useUniqId} from './useUniqId';\nexport type {UseUniqIdResult} from './useUniqId';\n"]}

@@ -1,1 +1,0 @@
-{"version":3,"file":"index.js","sourceRoot":"../../../../../src","sources":["hooks/private/useElementSize/index.ts"],"names":[],"mappings":";;;AAAA,sDAAgD;AAAxC,gHAAA,cAAc,OAAA","sourcesContent":["export {useElementSize} from './useElementSize';\nexport type {UseElementSizeResult} from './useElementSize';\n"]}

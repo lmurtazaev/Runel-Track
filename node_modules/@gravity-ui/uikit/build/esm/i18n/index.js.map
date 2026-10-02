@@ -1,1 +1,0 @@
-{"version":3,"file":"index.js","sourceRoot":"../../../src","sources":["i18n/index.ts"],"names":[],"mappings":"AAAA,yCAAsC;AACtC,wCAAqC","sourcesContent":["export * from './addComponentKeysets';\nexport * from './addLanguageKeysets';\nexport type * from './types';\n"]}

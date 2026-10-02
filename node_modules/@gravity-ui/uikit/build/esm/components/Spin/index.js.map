@@ -1,1 +1,0 @@
-{"version":3,"file":"index.js","sourceRoot":"../../../../src","sources":["components/Spin/index.ts"],"names":[],"mappings":"AAAA,0BAAuB","sourcesContent":["export * from './Spin';\n"]}

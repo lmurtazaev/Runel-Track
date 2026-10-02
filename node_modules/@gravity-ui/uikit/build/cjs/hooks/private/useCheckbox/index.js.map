@@ -1,1 +1,0 @@
-{"version":3,"file":"index.js","sourceRoot":"../../../../../src","sources":["hooks/private/useCheckbox/index.ts"],"names":[],"mappings":";;;AAAA,gDAA0C;AAAlC,0GAAA,WAAW,OAAA","sourcesContent":["export {useCheckbox} from './useCheckbox';\nexport type {UseCheckboxProps, UseCheckboxResult} from './useCheckbox';\n"]}

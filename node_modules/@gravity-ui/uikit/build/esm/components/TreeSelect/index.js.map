@@ -1,1 +1,0 @@
-{"version":3,"file":"index.js","sourceRoot":"../../../../src","sources":["components/TreeSelect/index.ts"],"names":[],"mappings":"AAAA,OAAO,EAAC,UAAU,EAAC,wBAAqB","sourcesContent":["export {TreeSelect} from './TreeSelect';\nexport type {TreeSelectProps, TreeSelectRenderItem} from './types';\n"]}

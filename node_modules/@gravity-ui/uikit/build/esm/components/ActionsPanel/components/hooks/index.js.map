@@ -1,1 +1,0 @@
-{"version":3,"file":"index.js","sourceRoot":"../../../../../../src","sources":["components/ActionsPanel/components/hooks/index.ts"],"names":[],"mappings":"AAAA,OAAO,EAAC,kBAAkB,EAAC,gCAA6B;AACxD,OAAO,EAAC,oBAAoB,EAAC,oCAAiC","sourcesContent":["export {useCollapseActions} from './useCollapseActions';\nexport {OBSERVER_TARGET_ATTR} from './useObserveIntersection';\n"]}

@@ -1,1 +1,0 @@
-{"version":3,"file":"index.js","sourceRoot":"../../../../../src","sources":["hooks/private/useStateWithCallback/index.ts"],"names":[],"mappings":";;;AAAA,kEAA4D;AAApD,4HAAA,oBAAoB,OAAA","sourcesContent":["export {useStateWithCallback} from './useStateWithCallback';\n"]}

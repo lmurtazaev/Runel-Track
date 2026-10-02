@@ -1,1 +1,0 @@
-{"version":3,"file":"index.js","sourceRoot":"../../../../src","sources":["hooks/useFocusWithin/index.ts"],"names":[],"mappings":"AAAA,OAAO,EAAC,cAAc,EAAC,4BAAyB","sourcesContent":["export {useFocusWithin} from './useFocusWithin';\nexport type {UseFocusWithinProps, UseFocusWithinResult} from './useFocusWithin';\n"]}

@@ -1,1 +1,0 @@
-{"version":3,"file":"index.js","sourceRoot":"../../../../../../src","sources":["components/useList/components/ListContainerView/index.ts"],"names":[],"mappings":";;;AAAA,4DAAmF;AAA3E,sHAAA,iBAAiB,OAAA","sourcesContent":["export {ListContainerView, type ListContainerViewProps} from './ListContainerView';\n"]}

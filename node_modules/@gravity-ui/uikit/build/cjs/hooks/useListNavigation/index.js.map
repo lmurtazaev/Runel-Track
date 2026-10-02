@@ -1,1 +1,0 @@
-{"version":3,"file":"index.js","sourceRoot":"../../../../src","sources":["hooks/useListNavigation/index.ts"],"names":[],"mappings":";;;AAAA,4DAAsD;AAA9C,sHAAA,iBAAiB,OAAA","sourcesContent":["export {useListNavigation} from './useListNavigation';\nexport type {UseListNavigationProps, UseListNavigationResult} from './useListNavigation';\n"]}

@@ -1,1 +1,0 @@
-{"version":3,"file":"index.js","sourceRoot":"../../../../../src","sources":["components/Avatar/AvatarText/index.ts"],"names":[],"mappings":";;;AACA,oCAA6C;AAArC,6GAAA,oBAAoB,OAAA;AAC5B,8CAAwC;AAAhC,wGAAA,UAAU,OAAA","sourcesContent":["export type {AvatarTextProps} from './types';\nexport {getAvatarDisplayText} from './utils';\nexport {AvatarText} from './AvatarText';\n"]}

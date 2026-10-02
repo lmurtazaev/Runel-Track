@@ -1,1 +1,0 @@
-{"version":3,"file":"index.js","sourceRoot":"../../../../src","sources":["hooks/useTimeout/index.ts"],"names":[],"mappings":"AAAA,OAAO,EAAC,UAAU,EAAC,wBAAqB","sourcesContent":["export {useTimeout} from './useTimeout';\nexport type {UseTimeoutProps} from './useTimeout';\n"]}

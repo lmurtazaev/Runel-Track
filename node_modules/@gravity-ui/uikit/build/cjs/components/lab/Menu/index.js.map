@@ -1,1 +1,0 @@
-{"version":3,"file":"index.js","sourceRoot":"../../../../../src","sources":["components/lab/Menu/index.ts"],"names":[],"mappings":";;;AAAA,oDAAuB;AACvB,2DAA8B;AAC9B,wDAA2B;AAC3B,2DAA8B;AAC9B,qDAAwB","sourcesContent":["export * from './Menu';\nexport * from './MenuTrigger';\nexport * from './MenuItem';\nexport * from './MenuDivider';\nexport * from './types';\n"]}

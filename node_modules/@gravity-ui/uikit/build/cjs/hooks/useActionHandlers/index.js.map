@@ -1,1 +1,0 @@
-{"version":3,"file":"index.js","sourceRoot":"../../../../src","sources":["hooks/useActionHandlers/index.ts"],"names":[],"mappings":";;;AAAA,4DAAsD;AAA9C,sHAAA,iBAAiB,OAAA","sourcesContent":["export {useActionHandlers} from './useActionHandlers';\nexport type {UseActionHandlersProps, UseActionHandlersResult} from './useActionHandlers';\n"]}

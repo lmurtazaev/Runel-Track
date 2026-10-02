@@ -1,1 +1,0 @@
-{"version":3,"file":"index.js","sourceRoot":"../../../../../src","sources":["hooks/private/useAnimateHeight/index.ts"],"names":[],"mappings":"AAAA,OAAO,EAAC,gBAAgB,EAAC,8BAA2B","sourcesContent":["export {useAnimateHeight} from './useAnimateHeight';\n"]}

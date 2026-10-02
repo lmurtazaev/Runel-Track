@@ -1,1 +1,0 @@
-{"version":3,"file":"types.js","sourceRoot":"../../../../../src","sources":["components/Avatar/AvatarText/types.ts"],"names":[],"mappings":"","sourcesContent":["import type {AvatarCommonProps} from '../types/common';\n\nexport interface AvatarTextProps extends AvatarCommonProps {\n    text: string;\n    color?: string;\n}\n"]}

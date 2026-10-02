@@ -1,1 +1,0 @@
-{"version":3,"file":"index.js","sourceRoot":"../../../../src","sources":["components/Hotkey/index.ts"],"names":[],"mappings":";;;AAAA,sCAA8C;AAAtC,gGAAA,MAAM,OAAA;AAAE,sGAAA,YAAY,OAAA","sourcesContent":["export {Hotkey, parseHotkeys} from './Hotkey';\nexport type {HotkeyProps} from './Hotkey';\n"]}

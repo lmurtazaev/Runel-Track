@@ -1,1 +1,0 @@
-{"version":3,"file":"index.js","sourceRoot":"../../../../src","sources":["hooks/useFileInput/index.ts"],"names":[],"mappings":"AAAA,OAAO,EAAC,YAAY,EAAC,0BAAuB","sourcesContent":["export {useFileInput} from './useFileInput';\nexport type {UseFileInputProps, UseFileInputResult} from './useFileInput';\n"]}

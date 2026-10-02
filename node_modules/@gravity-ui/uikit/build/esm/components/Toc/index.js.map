@@ -1,1 +1,0 @@
-{"version":3,"file":"index.js","sourceRoot":"../../../../src","sources":["components/Toc/index.ts"],"names":[],"mappings":"AAAA,yBAAsB;AACtB,2BAAwB","sourcesContent":["export * from './Toc';\nexport * from './types';\n"]}

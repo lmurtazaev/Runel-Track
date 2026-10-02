@@ -1,1 +1,0 @@
-{"version":3,"file":"constants.js","sourceRoot":"../../../../src","sources":["components/Label/constants.ts"],"names":[],"mappings":";;;AAAa,QAAA,OAAO,GAAG;IACnB,UAAU,EAAE,aAAa;IACzB,WAAW,EAAE,cAAc;IAC3B,UAAU,EAAE,aAAa;CAC5B,CAAC","sourcesContent":["export const LabelQa = {\n    copyButton: 'copy-button',\n    closeButton: 'close-button',\n    mainButton: 'main-button',\n};\n"]}

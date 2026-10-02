@@ -1,1 +1,0 @@
-{"version":3,"file":"index.js","sourceRoot":"../../../../src","sources":["components/AvatarStack/index.ts"],"names":[],"mappings":"AAAA,OAAO,EAAC,WAAW,EAAC,yBAAsB","sourcesContent":["export {AvatarStack} from './AvatarStack';\nexport type {\n    AvatarStackProps,\n    AvatarStackOverlapSize,\n    AvatarStackMoreProps,\n    AvatarStackMoreButtonProps,\n} from './types';\n"]}
