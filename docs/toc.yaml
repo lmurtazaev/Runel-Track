@@ -1,5 +1,4 @@
-title: My Docs
-href: index.md
+title: ВоркТаймер
 items:
-  - name: Introduction
-    href: index.md
+  - name: О плагине
+    href: readme.md
