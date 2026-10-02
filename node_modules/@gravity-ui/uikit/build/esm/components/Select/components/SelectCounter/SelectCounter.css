@@ -1,0 +1,36 @@
+.g-select-counter {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-inline: 4px;
+  background-color: var(--g-color-base-generic);
+}
+.g-select-counter__text {
+  margin-inline: 4px;
+  flex-grow: 1;
+  text-align: center;
+}
+.g-select-counter_size_xl .g-select-counter__text {
+  margin-inline: 6px;
+}
+.g-select-counter_size_s {
+  border-radius: var(--g-border-radius-xs);
+  height: 20px;
+  min-width: 20px;
+}
+.g-select-counter_size_m {
+  border-radius: var(--g-border-radius-s);
+  height: 24px;
+  min-width: 24px;
+}
+.g-select-counter_size_l {
+  border-radius: var(--g-border-radius-m);
+  height: 28px;
+  min-width: 28px;
+}
+.g-select-counter_size_xl {
+  border-radius: var(--g-border-radius-l);
+  margin-inline: 4px;
+  height: 36px;
+  min-width: 36px;
+}

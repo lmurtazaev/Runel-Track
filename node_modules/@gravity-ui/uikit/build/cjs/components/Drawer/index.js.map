@@ -1,0 +1,1 @@
+{"version":3,"file":"index.js","sourceRoot":"../../../../src","sources":["components/Drawer/index.ts"],"names":[],"mappings":";;;AAAA,iEAAoC","sourcesContent":["export * from './components/Drawer';\nexport type {DrawerPlacement} from './hooks/useResizeHandlers';\n"]}

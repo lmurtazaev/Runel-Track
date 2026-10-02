@@ -1,0 +1,20 @@
+.g-table__sort {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--g-spacing-1);
+  vertical-align: top;
+  cursor: pointer;
+  user-select: none;
+  border-radius: var(--g-border-radius-xs);
+}
+.g-table__sort-indicator {
+  display: flex;
+  flex-shrink: 0;
+  color: var(--g-color-text-hint);
+}
+.g-table__sort_active .g-table__sort-indicator {
+  color: var(--g-color-text-primary);
+}
+.g-table__sort:focus-visible {
+  outline: 2px solid var(--g-color-line-focus);
+}

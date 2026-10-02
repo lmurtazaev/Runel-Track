@@ -1,0 +1,11 @@
+.g-list-container-view {
+  box-sizing: border-box;
+  width: 100%;
+  outline: none;
+}
+.g-list-container-view_fixed-height {
+  height: var(--g-list-container-height, 300px);
+}
+.g-list-container-view:not(.g-list-container-view_fixed-height) {
+  overflow: auto;
+}

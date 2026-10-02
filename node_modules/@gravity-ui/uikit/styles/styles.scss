@@ -1,0 +1,43 @@
+@use './themes';
+
+.g-root {
+    background: var(--g-color-base-background);
+    color: var(--g-color-text-primary);
+
+    @include themes.g-theme-common;
+
+    &_theme_light {
+        @include themes.g-theme-light;
+    }
+
+    &_theme_dark {
+        @include themes.g-theme-dark;
+    }
+
+    &_theme_light-hc {
+        @include themes.g-theme-light-hc;
+    }
+
+    &_theme_dark-hc {
+        @include themes.g-theme-dark-hc;
+    }
+}
+
+@keyframes g-loading-animation {
+    from {
+        background-position: -12px 0;
+    }
+    to {
+        background-position: 0 0;
+    }
+}
+
+:root:has(body.g-root_theme_light),
+:root:has(body.g-root_theme_light-hc) {
+    color-scheme: light;
+}
+
+:root:has(body.g-root_theme_dark),
+:root:has(body.g-root_theme_dark-hc) {
+    color-scheme: dark;
+}

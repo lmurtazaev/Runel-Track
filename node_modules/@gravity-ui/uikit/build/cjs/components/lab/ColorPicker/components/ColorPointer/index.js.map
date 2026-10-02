@@ -1,0 +1,1 @@
+{"version":3,"file":"index.js","sourceRoot":"../../../../../../../src","sources":["components/lab/ColorPicker/components/ColorPointer/index.ts"],"names":[],"mappings":";;;AAAA,kDAA4C;AAApC,4GAAA,YAAY,OAAA","sourcesContent":["export {ColorPointer} from './ColorPointer';\n"]}

@@ -1,0 +1,1 @@
+{"version":3,"file":"svg.js","sourceRoot":"../../../../src","sources":["components/utils/svg.ts"],"names":[],"mappings":";;;AAAa,QAAA,kBAAkB,GAAG;IAC9B,+BAA+B;IAC/B,aAAa,EAAE,IAAI;CACtB,CAAC","sourcesContent":["export const a11yHiddenSvgProps = {\n    // Hides element from a11y tree\n    'aria-hidden': true,\n};\n"]}

@@ -1,0 +1,37 @@
+.g-accordion {
+  box-sizing: border-box;
+  border: 1px solid var(--g-color-line-generic);
+  height: fit-content;
+}
+.g-accordion .g-disclosure__content.g-disclosure_exit_active {
+  animation: none;
+  /**
+   * Override display property for disclosure exit states.
+   *
+   * Context: In the base Disclosure component, elements with
+   * `disclosure_exit_active` class maintain `display: block` during
+   * exit animations and are hidden via `animationend` event.
+   *
+   * Since animations are disabled in Accordion context for performance
+   * and UX consistency, we immediately hide exiting elements to prevent
+   * visual artifacts and ensure proper accordion behavior.
+   */
+  display: none;
+}
+.g-accordion .g-disclosure__content.g-disclosure_enter_active {
+  animation: none;
+}
+.g-accordion_size_m {
+  border-radius: var(--g-border-radius-m);
+}
+.g-accordion_size_l {
+  border-radius: var(--g-border-radius-l);
+}
+.g-accordion_size_xl {
+  border-radius: var(--g-border-radius-xl);
+}
+.g-accordion_view_top-bottom {
+  border-radius: 0;
+  border-inline-start: 0;
+  border-inline-end: 0;
+}

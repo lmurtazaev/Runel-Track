@@ -1,0 +1,1 @@
+{"version":3,"file":"types.js","sourceRoot":"../../../../src","sources":["components/Toc/types.ts"],"names":[],"mappings":"","sourcesContent":["export interface TocItem {\n    value?: string;\n    content?: React.ReactNode;\n    href?: string;\n    items?: TocItem[];\n}\n"]}

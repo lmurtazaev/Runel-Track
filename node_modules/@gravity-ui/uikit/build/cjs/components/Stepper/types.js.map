@@ -1,0 +1,1 @@
+{"version":3,"file":"types.js","sourceRoot":"../../../../src","sources":["components/Stepper/types.ts"],"names":[],"mappings":"","sourcesContent":["export type StepperItemView = 'idle' | 'error' | 'success';\n\nexport type StepperSize = 's' | 'm' | 'l';\n"]}

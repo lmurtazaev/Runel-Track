@@ -1,0 +1,64 @@
+.g-col {
+  flex: 1 0 0;
+  width: 100%;
+}
+.g-col_size_1 {
+  box-sizing: border-box;
+  flex: 0 0 auto;
+  width: 8.33333333%;
+}
+.g-col_size_2 {
+  box-sizing: border-box;
+  flex: 0 0 auto;
+  width: 16.66666667%;
+}
+.g-col_size_3 {
+  box-sizing: border-box;
+  flex: 0 0 auto;
+  width: 25%;
+}
+.g-col_size_4 {
+  box-sizing: border-box;
+  flex: 0 0 auto;
+  width: 33.33333333%;
+}
+.g-col_size_5 {
+  box-sizing: border-box;
+  flex: 0 0 auto;
+  width: 41.66666667%;
+}
+.g-col_size_6 {
+  box-sizing: border-box;
+  flex: 0 0 auto;
+  width: 50%;
+}
+.g-col_size_7 {
+  box-sizing: border-box;
+  flex: 0 0 auto;
+  width: 58.33333333%;
+}
+.g-col_size_8 {
+  box-sizing: border-box;
+  flex: 0 0 auto;
+  width: 66.66666667%;
+}
+.g-col_size_9 {
+  box-sizing: border-box;
+  flex: 0 0 auto;
+  width: 75%;
+}
+.g-col_size_10 {
+  box-sizing: border-box;
+  flex: 0 0 auto;
+  width: 83.33333333%;
+}
+.g-col_size_11 {
+  box-sizing: border-box;
+  flex: 0 0 auto;
+  width: 91.66666667%;
+}
+.g-col_size_12 {
+  box-sizing: border-box;
+  flex: 0 0 auto;
+  width: 100%;
+}

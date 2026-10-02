@@ -1,0 +1,1 @@
+{"version":3,"file":"index.js","sourceRoot":"../../../../src","sources":["hooks/useResizeObserver/index.ts"],"names":[],"mappings":";;;AAAA,4DAAsD;AAA9C,sHAAA,iBAAiB,OAAA","sourcesContent":["export {useResizeObserver} from './useResizeObserver';\n"]}

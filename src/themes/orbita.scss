@@ -1,0 +1,15 @@
+@font-face {
+    font-family: 'YS Text Wide 110';
+    src: url('../../public/fonts/ys-text-display-wide-110.woff2') format('woff2');
+    font-weight: 500;
+    font-style: normal;
+    font-display: swap;
+}
+
+.g-root.plugin-orbita {
+    --g-text-body-font-family: 'YS Text', 'Helvetica Neue', 'Arial', 'Helvetica', sans-serif;
+    --g-text-header-font-family: 'YS Text', 'Helvetica Neue', 'Arial', 'Helvetica', sans-serif;
+    --g-text-subheader-font-family: 'YS Text', 'Helvetica Neue', 'Arial', 'Helvetica', sans-serif;
+    --g-text-display-font-family:
+        'YS Text Wide 110', 'YS Text', 'Helvetica Neue', 'Arial', 'Helvetica', sans-serif;
+}

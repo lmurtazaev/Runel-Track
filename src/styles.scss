@@ -1,0 +1,78 @@
+@use './reset.css';
+@use '@gravity-ui/uikit/styles/fonts.css';
+@use '@gravity-ui/uikit/styles/styles.css';
+@use './themes/ys-text.scss';
+@use './themes/yandex-360.scss';
+
+@font-face {
+    font-family: 'YS Text Wide 110';
+    src:
+        url('../public/fonts/ys-text-display-wide-110.woff2') format('woff2'),
+        url('../public/fonts/ys-text-display-wide-110.woff') format('woff');
+    font-weight: 500;
+    font-style: normal;
+}
+
+.g-root {
+    --g-font-family-sans: 'YS Text', 'Helvetica Neue', 'Arial', 'Helvetica', sans-serif;
+    --g-font-family-monospace:
+        'Menlo', 'Monaco', 'Consolas', 'Liberation Mono', 'Ubuntu Mono', 'DejaVu Sans Mono',
+        'Courier New', 'Courier', monospace;
+
+    --g-text-header-font-family:
+        'YS Text Wide 110', 'Helvetica Neue', 'Arial', 'Helvetica', sans-serif;
+    --g-text-subheader-font-family:
+        'YS Text Wide 110', 'Helvetica Neue', 'Arial', 'Helvetica', sans-serif;
+
+    --g-text-header-font-weight: 500;
+    --g-text-subheader-font-weight: 500;
+    --g-text-display-font-weight: 500;
+    --g-text-accent-font-weight: 500;
+
+    --g-text-body-1-font-size: 14px;
+    --g-text-body-1-line-height: 18px;
+
+    --g-text-body-2-font-size: 14px;
+    --g-text-body-2-line-height: 20px;
+
+    --g-text-body-3-font-size: 16px;
+    --g-text-body-3-line-height: 24px;
+
+    --g-text-body-short-font-size: 14px;
+    --g-text-body-short-line-height: 18px;
+
+    --g-text-caption-1-font-size: 11px;
+    --g-text-caption-1-line-height: 12px;
+
+    --g-text-caption-2-font-size: 12px;
+    --g-text-caption-2-line-height: 16px;
+
+    --g-text-subheader-1-font-size: 14px;
+    --g-text-subheader-1-line-height: 18px;
+
+    --g-text-subheader-2-font-size: 16px;
+    --g-text-subheader-2-line-height: 20px;
+
+    --g-text-subheader-3-font-size: 16px;
+    --g-text-subheader-3-line-height: 24px;
+
+    --g-text-subheader-3-font: 700 var(--g-text-subheader-3-font-size) /
+        var(--g-text-subheader-3-font-size) var(--g-text-subheader-font-family);
+
+    --g-border-radius-xs: 1000px;
+    --g-border-radius-s: 8px;
+    --g-border-radius-m: 10px;
+    --g-border-radius-l: 12px;
+    --g-border-radius-xl: 16px;
+    --g-border-radius-2xl: 24px;
+}
+
+.g-root_theme_light,
+.g-root_theme_light-hc {
+    --orb-elevation-sunken: rgb(237, 239, 240);
+}
+
+.g-root_theme_dark,
+.g-root_theme_dark-hc {
+    --orb-elevation-sunken: rgb(20, 20, 23);
+}

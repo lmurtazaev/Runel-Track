@@ -1,0 +1,1 @@
+{"version":3,"file":"types.js","sourceRoot":"../../../../../src","sources":["components/Avatar/AvatarIcon/types.ts"],"names":[],"mappings":"","sourcesContent":["import type {IconData} from '../../Icon';\nimport type {AvatarCommonProps} from '../types/common';\n\nexport interface AvatarIconProps extends AvatarCommonProps {\n    icon: IconData;\n    color?: string;\n}\n"]}

@@ -1,0 +1,79 @@
+.g-lab-menu-item {
+  --_--padding-block: 0;
+  --_--padding-inline: 0;
+  --_--icon-size: 0;
+  --_--icon-offset: 0;
+  --_--submenu-icon-shift: 0;
+  display: flex;
+  align-items: center;
+  padding: var(--_--padding-block) var(--_--padding-inline);
+}
+.g-lab-menu-item::before, .g-lab-menu-item__icon {
+  position: relative;
+  inset-inline-end: var(--_--icon-offset);
+  min-width: var(--_--icon-size);
+  height: var(--_--icon-size);
+}
+.g-lab-menu-item::after, .g-lab-menu-item__arrow {
+  display: flex;
+  align-items: center;
+  position: relative;
+  inset-inline-start: var(--_--submenu-icon-shift);
+  margin-inline-start: auto;
+  min-width: var(--_--icon-size);
+  height: var(--_--icon-size);
+  color: var(--g-color-text-secondary);
+}
+.g-lab-menu-item:not(:has(> .g-lab-menu-item__icon)):has(~ .g-lab-menu-item > .g-lab-menu-item__icon)::before,
+.g-lab-menu-item:has(> .g-lab-menu-item__icon) ~ .g-lab-menu-item:not(:has(> .g-lab-menu-item__icon))::before {
+  content: "";
+}
+
+.g-lab-menu-item:not(:has(> .g-lab-menu-item__arrow)):has(~ .g-lab-menu-item > .g-lab-menu-item__arrow)::after,
+.g-lab-menu-item:has(> .g-lab-menu-item__arrow) ~ .g-lab-menu-item:not(:has(> .g-lab-menu-item__arrow))::after {
+  content: "";
+}
+
+.g-lab-menu-item_theme_info {
+  --g-list-item-view-text-color: var(--g-color-text-info);
+}
+.g-lab-menu-item_theme_success {
+  --g-list-item-view-text-color: var(--g-color-text-positive);
+}
+.g-lab-menu-item_theme_warning {
+  --g-list-item-view-text-color: var(--g-color-text-warning);
+}
+.g-lab-menu-item_theme_danger {
+  --g-list-item-view-text-color: var(--g-color-text-danger);
+}
+.g-lab-menu-item_theme_utility {
+  --g-list-item-view-text-color: var(--g-color-text-utility);
+}
+.g-lab-menu-item_size_s {
+  --_--padding-block: 2px;
+  --_--padding-inline: 8px;
+  --_--icon-size: 14px;
+  --_--icon-offset: 4px;
+  --_--submenu-icon-shift: 7px;
+}
+.g-lab-menu-item_size_m {
+  --_--padding-block: 4px;
+  --_--padding-inline: 12px;
+  --_--icon-size: 16px;
+  --_--icon-offset: 6px;
+  --_--submenu-icon-shift: 8px;
+}
+.g-lab-menu-item_size_l {
+  --_--padding-block: 6px;
+  --_--padding-inline: 12px;
+  --_--icon-size: 16px;
+  --_--icon-offset: 6px;
+  --_--submenu-icon-shift: 8px;
+}
+.g-lab-menu-item_size_xl {
+  --_--padding-block: 8px;
+  --_--padding-inline: 16px;
+  --_--icon-size: 20px;
+  --_--icon-offset: 6px;
+  --_--submenu-icon-shift: 10px;
+}

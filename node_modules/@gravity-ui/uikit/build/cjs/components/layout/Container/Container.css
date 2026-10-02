@@ -1,0 +1,41 @@
+.g-container {
+  margin-inline: auto;
+  max-width: 100%;
+  height: 100%;
+}
+.g-container_sr_0 > .g-row:not(:last-child) {
+  margin-block-end: var(--g-spacing-0);
+}
+.g-container_sr_half > .g-row:not(:last-child) {
+  margin-block-end: var(--g-spacing-half);
+}
+.g-container_sr_1 > .g-row:not(:last-child) {
+  margin-block-end: var(--g-spacing-1);
+}
+.g-container_sr_2 > .g-row:not(:last-child) {
+  margin-block-end: var(--g-spacing-2);
+}
+.g-container_sr_3 > .g-row:not(:last-child) {
+  margin-block-end: var(--g-spacing-3);
+}
+.g-container_sr_4 > .g-row:not(:last-child) {
+  margin-block-end: var(--g-spacing-4);
+}
+.g-container_sr_5 > .g-row:not(:last-child) {
+  margin-block-end: var(--g-spacing-5);
+}
+.g-container_sr_6 > .g-row:not(:last-child) {
+  margin-block-end: var(--g-spacing-6);
+}
+.g-container_sr_7 > .g-row:not(:last-child) {
+  margin-block-end: var(--g-spacing-7);
+}
+.g-container_sr_8 > .g-row:not(:last-child) {
+  margin-block-end: var(--g-spacing-8);
+}
+.g-container_sr_9 > .g-row:not(:last-child) {
+  margin-block-end: var(--g-spacing-9);
+}
+.g-container_sr_10 > .g-row:not(:last-child) {
+  margin-block-end: var(--g-spacing-10);
+}

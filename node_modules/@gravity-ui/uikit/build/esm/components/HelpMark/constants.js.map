@@ -1,0 +1,1 @@
+{"version":3,"file":"constants.js","sourceRoot":"../../../../src","sources":["components/HelpMark/constants.ts"],"names":[],"mappings":"AAAA,MAAM,CAAC,MAAM,aAAa,GAAG;IACzB,CAAC,EAAE,EAAE;IACL,CAAC,EAAE,EAAE;IACL,CAAC,EAAE,EAAE;IACL,EAAE,EAAE,EAAE;CACT,CAAC","sourcesContent":["export const ICON_SIZE_MAP = {\n    s: 14,\n    m: 16,\n    l: 18,\n    xl: 20,\n};\n"]}

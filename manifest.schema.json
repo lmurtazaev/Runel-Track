@@ -1,0 +1,849 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Manifest",
+  "description": "Schema for validating plugin manifest",
+  "type": "object",
+  "required": [
+    "slug",
+    "version",
+    "permissions",
+    "name",
+    "description",
+    "support"
+  ],
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "docsUrl": {
+      "type": "string",
+      "description": "URL to the documentation for the plugin",
+      "maxLength": 1000,
+      "minLength": 1
+    },
+    "id": {
+      "type": "string",
+      "description": "Unique identifier for the plugin ()",
+      "minLength": 3,
+      "maxLength": 63,
+      "pattern": "^[a-z0-9-]+$"
+    },
+    "manifest_version": {
+      "type": "number",
+      "description": "Manifest format version",
+      "minimum": 1
+    },
+    "supported_services": {
+      "type": "array",
+      "description": "Supported services for this plugin",
+      "items": {
+        "type": "string",
+        "enum": [
+          "tracker"
+        ]
+      },
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "slug": {
+      "type": "string",
+      "description": "Unique identifier for the plugin (lowercase letters, numbers, hyphen)",
+      "minLength": 3,
+      "maxLength": 63,
+      "pattern": "^[a-z0-9-]+$"
+    },
+    "version": {
+      "type": "string",
+      "description": "Version of the plugin (semver format required)",
+      "minLength": 1,
+      "pattern": "^\\d+\\.\\d+\\.\\d+(-[a-zA-Z0-9.-]+)?(\\+[a-zA-Z0-9.-]+)?$"
+    },
+    "name": {
+      "type": "object",
+      "description": "Localized plugin name",
+      "required": [
+        "ru",
+        "en"
+      ],
+      "properties": {
+        "ru": {
+          "type": "string",
+          "description": "Russian name",
+          "minLength": 1,
+          "maxLength": 30
+        },
+        "en": {
+          "type": "string",
+          "description": "English name",
+          "minLength": 1,
+          "maxLength": 30
+        }
+      },
+      "additionalProperties": false
+    },
+    "description": {
+      "type": "object",
+      "description": "Localized plugin description",
+      "required": [
+        "ru",
+        "en"
+      ],
+      "properties": {
+        "ru": {
+          "type": "string",
+          "description": "Russian description",
+          "minLength": 1,
+          "maxLength": 255
+        },
+        "en": {
+          "type": "string",
+          "description": "English description",
+          "minLength": 1,
+          "maxLength": 255
+        }
+      },
+      "additionalProperties": false
+    },
+    "support": {
+      "type": "array",
+      "description": "Support contact information",
+      "items": {
+        "type": "object",
+        "required": [
+          "type",
+          "value"
+        ],
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "Type of support contact",
+            "enum": [
+              "email"
+            ]
+          },
+          "value": {
+            "type": "string",
+            "description": "Contact value",
+            "minLength": 1,
+            "maxLength": 100
+          }
+        },
+        "additionalProperties": false
+      },
+      "minItems": 1
+    },
+    "categories": {
+      "type": "array",
+      "description": "Categories this plugin belongs to",
+      "items": {
+        "type": "string",
+        "enum": [
+          "integrations",
+          "analytics",
+          "planning",
+          "development",
+          "automations",
+          "productivity",
+          "entertainment",
+          "ai-assistants",
+          "support",
+          "security"
+        ]
+      },
+      "uniqueItems": true
+    },
+    "homepage": {
+      "type": "string",
+      "description": "Homepage URL for the plugin (http or https)",
+      "pattern": "^https?://",
+      "maxLength": 1000
+    },
+    "license": {
+      "type": "string",
+      "description": "License identifier (e.g., MIT, Apache-2.0)",
+      "minLength": 1,
+      "maxLength": 32
+    },
+    "keywords": {
+      "type": "array",
+      "description": "Keywords for plugin discovery",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 30
+      },
+      "uniqueItems": true
+    },
+    "whatsnew": {
+      "type": "string",
+      "description": "What's new in this version",
+      "minLength": 1,
+      "maxLength": 300
+    },
+    "externalHost": {
+      "type": "string",
+      "description": "External host URL for the plugin (https only)",
+      "format": "uri",
+      "pattern": "^https://",
+      "maxLength": 1000
+    },
+    "permissions": {
+      "type": "object",
+      "description": "Permissions required by the plugin",
+      "required": [
+        "data"
+      ],
+      "properties": {
+        "data": {
+          "type": "array",
+          "description": "Data access permissions",
+          "items": {
+            "type": "string",
+            "enum": [
+              "tracker:issues:read",
+              "tracker:issues:write",
+              "tracker:issuetypes:read",
+              "tracker:statuses:read",
+              "tracker:queues:read",
+              "tracker:fields:read",
+              "tracker:entities:read",
+              "tracker:attachments:read",
+              "tracker:attachments:write",
+              "tracker:applications:read",
+              "tracker:boards:read",
+              "tracker:boards:write",
+              "tracker:bulk:read",
+              "tracker:bulk:write",
+              "tracker:bulkchange:read",
+              "tracker:bulkchange:write",
+              "tracker:charts:read",
+              "tracker:commentTemplates:read",
+              "tracker:commentTemplates:write",
+              "tracker:components:read",
+              "tracker:components:write",
+              "tracker:data:read",
+              "tracker:departments:read",
+              "tracker:entities:write",
+              "tracker:externalEventTypes:write",
+              "tracker:externalEvents:write",
+              "tracker:fields:write",
+              "tracker:filterFolders:write",
+              "tracker:filters:read",
+              "tracker:filters:write",
+              "tracker:goals:read",
+              "tracker:goals:write",
+              "tracker:groups:read",
+              "tracker:issueTemplates:read",
+              "tracker:issueTemplates:write",
+              "tracker:links:read",
+              "tracker:linktypes:read",
+              "tracker:liveBoards:write",
+              "tracker:localFields:read",
+              "tracker:maillists:read",
+              "tracker:maillists:write",
+              "tracker:myself:read",
+              "tracker:myself:write",
+              "tracker:priorities:read",
+              "tracker:queues:write",
+              "tracker:reminders:read",
+              "tracker:reminders:write",
+              "tracker:remotelinks:read",
+              "tracker:reports:read",
+              "tracker:reports:write",
+              "tracker:resolutions:read",
+              "tracker:resources:read",
+              "tracker:resources:write",
+              "tracker:roles:read",
+              "tracker:screens:read",
+              "tracker:services:read",
+              "tracker:sprints:read",
+              "tracker:sprints:write",
+              "tracker:system:write",
+              "tracker:tags:read",
+              "tracker:translations:read",
+              "tracker:users:read",
+              "tracker:users:write",
+              "tracker:versions:read",
+              "tracker:versions:write",
+              "tracker:workflows:read",
+              "tracker:workflows:write",
+              "tracker:worklog:read",
+              "tracker:worklog:write"
+            ]
+          },
+          "uniqueItems": true
+        },
+        "ui": {
+          "type": "array",
+          "description": "UI permissions",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "device": {
+          "type": "array",
+          "description": "Device permissions",
+          "items": {
+            "type": "string",
+            "enum": [
+              "clipboard-write",
+              "microphone",
+              "camera",
+              "geolocation",
+              "web-share",
+              "allow-downloads",
+              "allow-pointer-lock"
+            ]
+          },
+          "uniqueItems": true
+        },
+        "csp": {
+          "type": "array",
+          "description": "CSP capabilities the plugin asks the platform to allow",
+          "items": {
+            "type": "string",
+            "enum": [
+              "unsafe-eval",
+              "wasm-unsafe-eval"
+            ]
+          },
+          "uniqueItems": true
+        },
+        "external": {
+          "type": "array",
+          "description": "External API domains the plugin may call directly or through the platform proxy",
+          "items": {
+            "$ref": "#/definitions/ExternalDomain"
+          },
+          "uniqueItems": true
+        }
+      },
+      "additionalProperties": false
+    },
+    "slots": {
+      "type": "object",
+      "description": "Configuration for service slots",
+      "minProperties": 1,
+      "properties": {
+        "tracker": {
+          "type": "object",
+          "description": "Tracker service slots",
+          "minProperties": 1,
+          "properties": {
+            "issue.action": {
+              "type": "array",
+              "description": "Issue Action slot configurations",
+              "minItems": 1,
+              "items": {
+                "$ref": "#/definitions/SlotConfig"
+              }
+            },
+            "drawer.issue.action": {
+              "type": "array",
+              "description": "Drawer Issue Action slot configurations",
+              "minItems": 1,
+              "items": {
+                "$ref": "#/definitions/SlotConfig"
+              }
+            },
+            "issue.block": {
+              "type": "array",
+              "description": "Issue Block slot configurations",
+              "minItems": 1,
+              "items": {
+                "$ref": "#/definitions/SlotConfig"
+              }
+            },
+            "drawer.issue.block": {
+              "type": "array",
+              "description": "Drawer Issue Block slot configurations",
+              "minItems": 1,
+              "items": {
+                "$ref": "#/definitions/SlotConfig"
+              }
+            },
+            "issue.tab": {
+              "type": "array",
+              "description": "Issue Tab slot configurations",
+              "minItems": 1,
+              "items": {
+                "$ref": "#/definitions/SlotConfig"
+              }
+            },
+            "drawer.issue.tab": {
+              "type": "array",
+              "description": "Drawer Issue Tab slot configurations",
+              "minItems": 1,
+              "items": {
+                "$ref": "#/definitions/SlotConfig"
+              }
+            },
+            "issue.comment.action": {
+              "type": "array",
+              "description": "Issue Comment Action slot configurations",
+              "minItems": 1,
+              "items": {
+                "$ref": "#/definitions/SlotConfig"
+              }
+            },
+            "issue.editor.action": {
+              "type": "array",
+              "description": "Issue Editor Action slot configurations",
+              "minItems": 1,
+              "items": {
+                "$ref": "#/definitions/SlotConfig"
+              }
+            },
+            "queue.action": {
+              "type": "array",
+              "description": "Queue Action slot configurations",
+              "minItems": 1,
+              "items": {
+                "$ref": "#/definitions/SlotConfig"
+              }
+            },
+            "queue.tab": {
+              "type": "array",
+              "description": "Queue Tab slot configurations",
+              "minItems": 1,
+              "items": {
+                "$ref": "#/definitions/SlotConfig"
+              }
+            },
+            "navigation": {
+              "type": "array",
+              "description": "Navigation slot configurations",
+              "minItems": 1,
+              "items": {
+                "$ref": "#/definitions/SlotConfig"
+              }
+            },
+            "trigger.create.action": {
+              "type": "array",
+              "description": "Trigger Create Action slot configurations",
+              "minItems": 1,
+              "items": {
+                "$ref": "#/definitions/SlotConfig"
+              }
+            },
+            "trigger.edit.action": {
+              "type": "array",
+              "description": "Trigger Edit Action slot configurations",
+              "minItems": 1,
+              "items": {
+                "$ref": "#/definitions/SlotConfig"
+              }
+            },
+            "project.action": {
+              "type": "array",
+              "description": "Project Action slot configurations",
+              "minItems": 1,
+              "items": {
+                "$ref": "#/definitions/SlotConfig"
+              }
+            },
+            "drawer.project.action": {
+              "type": "array",
+              "description": "Drawer Project Action slot configurations",
+              "minItems": 1,
+              "items": {
+                "$ref": "#/definitions/SlotConfig"
+              }
+            },
+            "project.block": {
+              "type": "array",
+              "description": "Project Block slot configurations",
+              "minItems": 1,
+              "items": {
+                "$ref": "#/definitions/SlotConfig"
+              }
+            },
+            "drawer.project.block": {
+              "type": "array",
+              "description": "Drawer Project Block slot configurations",
+              "minItems": 1,
+              "items": {
+                "$ref": "#/definitions/SlotConfig"
+              }
+            },
+            "project.tab": {
+              "type": "array",
+              "description": "Project Tab slot configurations",
+              "minItems": 1,
+              "items": {
+                "$ref": "#/definitions/SlotConfig"
+              }
+            },
+            "drawer.project.tab": {
+              "type": "array",
+              "description": "Drawer Project Tab slot configurations",
+              "minItems": 1,
+              "items": {
+                "$ref": "#/definitions/SlotConfig"
+              }
+            },
+            "project.editor.action": {
+              "type": "array",
+              "description": "Project Editor Action slot configurations",
+              "minItems": 1,
+              "items": {
+                "$ref": "#/definitions/SlotConfig"
+              }
+            },
+            "portfolio.action": {
+              "type": "array",
+              "description": "Portfolio Action slot configurations",
+              "minItems": 1,
+              "items": {
+                "$ref": "#/definitions/SlotConfig"
+              }
+            },
+            "drawer.portfolio.action": {
+              "type": "array",
+              "description": "Drawer Portfolio Action slot configurations",
+              "minItems": 1,
+              "items": {
+                "$ref": "#/definitions/SlotConfig"
+              }
+            },
+            "portfolio.block": {
+              "type": "array",
+              "description": "Portfolio Block slot configurations",
+              "minItems": 1,
+              "items": {
+                "$ref": "#/definitions/SlotConfig"
+              }
+            },
+            "drawer.portfolio.block": {
+              "type": "array",
+              "description": "Drawer Portfolio Block slot configurations",
+              "minItems": 1,
+              "items": {
+                "$ref": "#/definitions/SlotConfig"
+              }
+            },
+            "portfolio.tab": {
+              "type": "array",
+              "description": "Portfolio Tab slot configurations",
+              "minItems": 1,
+              "items": {
+                "$ref": "#/definitions/SlotConfig"
+              }
+            },
+            "drawer.portfolio.tab": {
+              "type": "array",
+              "description": "Drawer Portfolio Tab slot configurations",
+              "minItems": 1,
+              "items": {
+                "$ref": "#/definitions/SlotConfig"
+              }
+            },
+            "portfolio.editor.action": {
+              "type": "array",
+              "description": "Portfolio Editor Action slot configurations",
+              "minItems": 1,
+              "items": {
+                "$ref": "#/definitions/SlotConfig"
+              }
+            },
+            "goal.action": {
+              "type": "array",
+              "description": "Goal Action slot configurations",
+              "minItems": 1,
+              "items": {
+                "$ref": "#/definitions/SlotConfig"
+              }
+            },
+            "drawer.goal.action": {
+              "type": "array",
+              "description": "Drawer Goal Action slot configurations",
+              "minItems": 1,
+              "items": {
+                "$ref": "#/definitions/SlotConfig"
+              }
+            },
+            "goal.block": {
+              "type": "array",
+              "description": "Goal Block slot configurations",
+              "minItems": 1,
+              "items": {
+                "$ref": "#/definitions/SlotConfig"
+              }
+            },
+            "drawer.goal.block": {
+              "type": "array",
+              "description": "Drawer Goal Block slot configurations",
+              "minItems": 1,
+              "items": {
+                "$ref": "#/definitions/SlotConfig"
+              }
+            },
+            "goal.tab": {
+              "type": "array",
+              "description": "Goal Tab slot configurations",
+              "minItems": 1,
+              "items": {
+                "$ref": "#/definitions/SlotConfig"
+              }
+            },
+            "drawer.goal.tab": {
+              "type": "array",
+              "description": "Drawer Goal Tab slot configurations",
+              "minItems": 1,
+              "items": {
+                "$ref": "#/definitions/SlotConfig"
+              }
+            },
+            "goal.editor.action": {
+              "type": "array",
+              "description": "Goal Editor Action slot configurations",
+              "minItems": 1,
+              "items": {
+                "$ref": "#/definitions/SlotConfig"
+              }
+            },
+            "attachment.viewer.action": {
+              "type": "array",
+              "description": "Attachment Viewer Action slot configurations",
+              "minItems": 1,
+              "items": {
+                "$ref": "#/definitions/SlotConfig"
+              }
+            },
+            "board.tab": {
+              "type": "array",
+              "description": "Board Tab slot configurations",
+              "minItems": 1,
+              "items": {
+                "$ref": "#/definitions/SlotConfig"
+              }
+            },
+            "dock": {
+              "type": "array",
+              "description": "Dock slot configurations",
+              "minItems": 1,
+              "items": {
+                "$ref": "#/definitions/SlotConfig"
+              }
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false,
+  "definitions": {
+    "ExternalDomain": {
+      "type": "object",
+      "description": "External API domain declaration with access channels and optional authorization config",
+      "required": [
+        "domain"
+      ],
+      "allOf": [
+        {
+          "if": {
+            "required": [
+              "access",
+              "authorization"
+            ]
+          },
+          "then": {
+            "properties": {
+              "access": {
+                "contains": {
+                  "const": "proxy"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "properties": {
+        "domain": {
+          "type": "string",
+          "description": "Hostname of the external API (no scheme, no path, lowercase)",
+          "pattern": "^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$",
+          "minLength": 1,
+          "maxLength": 253
+        },
+        "access": {
+          "type": "array",
+          "description": "Allowed access channels: direct browser requests and/or requests through the platform proxy",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "enum": [
+              "direct",
+              "proxy"
+            ]
+          }
+        },
+        "authorization": {
+          "$ref": "#/definitions/ExternalAuthorization"
+        },
+        "instructions": {
+          "type": "object",
+          "description": "Localized note shown to the end user when they need to provide a token for this domain (e.g. where to generate the PAT)",
+          "required": [
+            "ru",
+            "en"
+          ],
+          "properties": {
+            "ru": {
+              "type": "string",
+              "description": "Russian instructions",
+              "minLength": 1,
+              "maxLength": 500
+            },
+            "en": {
+              "type": "string",
+              "description": "English instructions",
+              "minLength": 1,
+              "maxLength": 500
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "ExternalAuthorization": {
+      "type": "object",
+      "description": "Authorization config for an external API domain",
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "description": "Authorization scheme: oauth (full OAuth flow or manual PAT for an OAuth provider) or token (manual non-OAuth token, e.g. API key)",
+          "enum": [
+            "oauth",
+            "token"
+          ]
+        },
+        "scopes": {
+          "type": "array",
+          "description": "Scopes required by this version of the plugin for the domain",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "contextTypes": {
+          "type": "array",
+          "description": "Supported token storage contexts",
+          "items": {
+            "type": "string",
+            "enum": [
+              "user"
+            ]
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "header": {
+          "type": "string",
+          "description": "Custom HTTP header name to put the token into (default: Authorization)",
+          "minLength": 1
+        },
+        "prefix": {
+          "type": "string",
+          "description": "Custom token prefix in the Authorization header (default: Bearer; empty string for no prefix)"
+        }
+      },
+      "additionalProperties": false
+    },
+    "SlotConfig": {
+      "type": "object",
+      "description": "Configuration for a specific slot",
+      "required": [
+        "entrypoint",
+        "title",
+        "contextLevel"
+      ],
+      "properties": {
+        "entrypoint": {
+          "type": "string",
+          "description": "Entry point file path for the slot",
+          "minLength": 1
+        },
+        "title": {
+          "type": "object",
+          "description": "Localized titles for the slot",
+          "required": [
+            "ru",
+            "en"
+          ],
+          "properties": {
+            "ru": {
+              "type": "string",
+              "description": "Russian title",
+              "minLength": 1,
+              "maxLength": 32
+            },
+            "en": {
+              "type": "string",
+              "description": "English title",
+              "minLength": 1,
+              "maxLength": 32
+            }
+          },
+          "additionalProperties": false
+        },
+        "contextLevel": {
+          "type": "string",
+          "description": "Level of context data provided to the slot",
+          "enum": [
+            "basic",
+            "full"
+          ]
+        },
+        "icon": {
+          "type": "object",
+          "description": "Optional slot icon (used by 'dock' slot for FAB)",
+          "required": [
+            "url"
+          ],
+          "properties": {
+            "url": {
+              "type": "string",
+              "description": "Relative path to the icon file (e.g. ./icon.svg)",
+              "minLength": 1
+            }
+          },
+          "additionalProperties": false
+        },
+        "description": {
+          "type": "object",
+          "description": "Localized descriptions for the slot",
+          "required": [
+            "ru",
+            "en"
+          ],
+          "properties": {
+            "ru": {
+              "type": "string",
+              "description": "Russian description",
+              "minLength": 1,
+              "maxLength": 300
+            },
+            "en": {
+              "type": "string",
+              "description": "English description",
+              "minLength": 1,
+              "maxLength": 300
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

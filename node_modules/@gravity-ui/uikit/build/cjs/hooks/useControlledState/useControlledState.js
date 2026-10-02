@@ -1,0 +1,39 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.useControlledState = useControlledState;
+const tslib_1 = require("tslib");
+const React = tslib_1.__importStar(require("react"));
+function useControlledState(value, defaultValue, onUpdate) {
+    const [innerValue, setInnerValue] = React.useState(value ?? defaultValue);
+    const isControlledRef = React.useRef(value !== undefined);
+    const isControlled = value !== undefined;
+    React.useEffect(() => {
+        const wasControlled = isControlledRef.current;
+        if (wasControlled !== isControlled) {
+            console.error(`[useControlledState] A component changed from ${wasControlled ? 'controlled' : 'uncontrolled'} to ${isControlled ? 'controlled' : 'uncontrolled'}.`);
+        }
+        isControlledRef.current = isControlled;
+    }, [isControlled]);
+    let currentValue = isControlled ? value : innerValue;
+    const setState = React.useCallback(
+    // We do not use setState callback syntax case because of a side effect
+    // that we call `onUpdate` inside the callback function and onUpdate
+    // in a controlling component frequently calls setState itself,
+    // therefore we call `setState` while we're rendering a different component.
+    (newValue, ...args) => {
+        if (!Object.is(currentValue, newValue)) {
+            onUpdate?.(newValue, ...args);
+        }
+        if (!isControlled) {
+            // If uncontrolled, mutate the currentValue local variable so that
+            // calling setState multiple times with the same value only emits onChange once.
+            // We do not use a ref for this because we specifically want the value to
+            // reset every render, and assigning to a ref in render breaks aborted suspended renders.
+            // eslint-disable-next-line react-hooks/exhaustive-deps
+            currentValue = newValue;
+            setInnerValue(newValue);
+        }
+    }, [isControlled, onUpdate, currentValue]);
+    return [currentValue, setState];
+}
+//# sourceMappingURL=useControlledState.js.map

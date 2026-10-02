@@ -1,0 +1,1 @@
+{"version":3,"file":"index.js","sourceRoot":"../../../../src","sources":["hooks/useIntersection/index.ts"],"names":[],"mappings":";;;AAAA,wDAAkD;AAA1C,kHAAA,eAAe,OAAA","sourcesContent":["export {useIntersection} from './useIntersection';\nexport type {UseIntersectionProps} from './useIntersection';\n"]}

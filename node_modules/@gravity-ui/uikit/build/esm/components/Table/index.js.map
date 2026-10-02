@@ -1,0 +1,1 @@
+{"version":3,"file":"index.js","sourceRoot":"../../../../src","sources":["components/Table/index.ts"],"names":[],"mappings":"AAAA,2BAAwB;AACxB,+BAAsB","sourcesContent":["export * from './Table';\nexport * from './hoc';\n"]}

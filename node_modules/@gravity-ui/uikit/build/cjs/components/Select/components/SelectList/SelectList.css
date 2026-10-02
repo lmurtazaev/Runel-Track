@@ -1,0 +1,161 @@
+.g-select-list {
+  display: flex;
+  margin: 4px 0;
+  overflow: hidden;
+}
+.g-popup .g-select-list:first-child, .g-popup .g-select-list:last-child {
+  border-radius: 0;
+}
+.g-select-list:not(.g-select-list_virtualized) {
+  overflow: auto;
+  position: relative;
+}
+.g-select-list_mobile {
+  max-height: 100%;
+}
+.g-select-list_multiple.g-list .g-list__item_selected {
+  background: none;
+}
+.g-select-list_multiple.g-list .g-list__item_active {
+  background: var(--g-color-base-simple-hover);
+}
+.g-select-list__group-label, .g-select-list__group-label-custom {
+  box-sizing: border-box;
+  position: relative;
+  width: 100%;
+  height: auto;
+  padding: 0;
+}
+.g-select-list__group-label {
+  font-size: var(--g-text-body-1-font-size);
+}
+.g-select-list_size_s .g-select-list__group-label:not(.g-select-list__group-label_empty) {
+  height: 24px;
+  padding: 8px 8px 4px;
+}
+.g-select-list_size_m .g-select-list__group-label:not(.g-select-list__group-label_empty) {
+  height: 28px;
+  padding: 8px 8px 4px;
+}
+.g-select-list_size_l .g-select-list__group-label:not(.g-select-list__group-label_empty) {
+  height: 36px;
+  padding: 10px 12px 6px;
+}
+.g-select-list_size_xl .g-select-list__group-label:not(.g-select-list__group-label_empty) {
+  height: 44px;
+  padding: 12px 12px 8px;
+  font-size: var(--g-text-body-2-font-size);
+}
+.g-select-list_mobile .g-select-list__group-label:not(.g-select-list__group-label_empty) {
+  height: 36px;
+  padding: 12px 12px 8px;
+  font-size: var(--g-text-body-2-font-size);
+}
+.g-list__item:not(:first-child) .g-select-list__group-label {
+  margin-block-start: 5px;
+}
+.g-list__item:not(:first-child) .g-select-list__group-label::before {
+  content: "";
+  position: absolute;
+  inset-block-start: -3px;
+  inset-inline-start: 0;
+  width: 100%;
+  height: 1px;
+  background-color: var(--g-color-line-generic);
+}
+.g-select-list__group-label-content {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: var(--g-text-accent-font-weight);
+  width: 100%;
+}
+.g-select-list__option {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+}
+.g-select-list_size_s .g-select-list__option {
+  padding: 0 8px;
+}
+.g-select-list_size_s .g-select-list__option .g-select-list__option-default-label {
+  height: 24px;
+  line-height: 24px;
+}
+.g-select-list_size_s .g-select-list__option {
+  --_--select-tick-icon-padding-right: calc(8px / 2);
+}
+.g-select-list_size_m .g-select-list__option {
+  padding: 0 8px 0 8px;
+}
+.g-select-list_size_m .g-select-list__option .g-select-list__option-default-label {
+  height: 28px;
+  line-height: 28px;
+}
+.g-select-list_size_m .g-select-list__option {
+  --_--select-tick-icon-padding-right: calc(8px / 2);
+}
+.g-select-list_size_l .g-select-list__option {
+  padding: 0 12px 0 12px;
+}
+.g-select-list_size_l .g-select-list__option .g-select-list__option-default-label {
+  height: 36px;
+  line-height: 36px;
+}
+.g-select-list_size_l .g-select-list__option {
+  --_--select-tick-icon-padding-right: calc(12px / 2);
+}
+.g-select-list_size_xl .g-select-list__option {
+  padding: 0 12px;
+}
+.g-select-list_size_xl .g-select-list__option .g-select-list__option-default-label {
+  height: 44px;
+  line-height: 44px;
+  font-size: var(--g-text-body-2-font-size);
+}
+.g-select-list_size_xl .g-select-list__option {
+  --_--select-tick-icon-padding-right: calc(12px / 2);
+}
+.g-select-list_mobile .g-select-list__option {
+  padding: 0 12px 0 12px;
+}
+.g-select-list_mobile .g-select-list__option .g-select-list__option-default-label {
+  height: 36px;
+  line-height: 36px;
+  font-size: var(--g-text-body-2-font-size);
+}
+.g-select-list_mobile .g-select-list__option .g-select-list__tick-icon {
+  padding-inline-end: calc(12px / 2);
+}
+.g-select-list__option_disabled {
+  cursor: default;
+}
+.g-select-list__option-default-label {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: var(--g-text-body-1-font-size);
+  width: 100%;
+}
+.g-select-list__option-default-label_disabled {
+  color: var(--g-color-text-secondary);
+}
+.g-select-list__tick-icon {
+  box-sizing: content-box;
+  flex: 0 0 16px;
+  visibility: hidden;
+  color: var(--g-color-text-brand);
+  padding-inline-end: var(--_--select-tick-icon-padding-right);
+}
+.g-select-list__tick-icon_shown {
+  visibility: visible;
+}
+.g-select-list__loading-indicator {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+}

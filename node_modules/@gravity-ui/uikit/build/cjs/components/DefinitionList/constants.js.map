@@ -1,0 +1,1 @@
+{"version":3,"file":"constants.js","sourceRoot":"../../../../src","sources":["components/DefinitionList/constants.ts"],"names":[],"mappings":";;;AAAA,uCAAkC;AAErB,QAAA,CAAC,GAAG,IAAA,UAAK,EAAC,iBAAiB,CAAC,CAAC","sourcesContent":["import {block} from '../utils/cn';\n\nexport const b = block('definition-list');\n"]}

@@ -1,0 +1,15 @@
+.g-box {
+  box-sizing: border-box;
+}
+.g-box_overflow_hidden {
+  overflow: hidden;
+}
+.g-box_overflow_auto {
+  overflow: auto;
+}
+.g-box_overflow_x {
+  overflow: hidden auto;
+}
+.g-box_overflow_y {
+  overflow: auto hidden;
+}

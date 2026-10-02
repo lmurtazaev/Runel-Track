@@ -1,0 +1,1 @@
+{"version":3,"file":"index.js","sourceRoot":"../../../../../src","sources":["hooks/private/useCloseOnTimeout/index.ts"],"names":[],"mappings":"AAAA,OAAO,EAAC,iBAAiB,EAAC,+BAA4B","sourcesContent":["export {useCloseOnTimeout} from './useCloseOnTimeout';\nexport type {UseCloseOnTimeoutProps, UseCloseOnTimeoutResult} from './useCloseOnTimeout';\n"]}

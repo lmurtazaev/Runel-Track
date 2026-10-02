@@ -1,0 +1,29 @@
+.g-file-preview-actions-mobile {
+  --_-mobile-actions-menu-size: 28px;
+}
+.g-file-preview-actions-mobile__actions-menu {
+  position: absolute;
+  z-index: 1;
+  height: 24px;
+  width: 24px;
+  padding: 0;
+  inset-block-start: 6px;
+  inset-inline-end: 14px;
+}
+.g-file-preview-actions-mobile__actions-menu::before {
+  box-shadow: none;
+}
+.g-file-preview-actions-mobile__list-item {
+  display: flex;
+  gap: var(--g-spacing-2);
+  align-items: center;
+  padding: 0 var(--g-spacing-4);
+}
+.g-file-preview-actions-mobile__list-item > svg {
+  width: var(--_-mobile-icon-size);
+  height: var(--_-mobile-icon-size);
+}
+.g-file-preview-actions-mobile__sheet {
+  --_-mobile-icon-size: 18px;
+  --g-sheet-content-padding: var(--g-spacing-1) 0;
+}

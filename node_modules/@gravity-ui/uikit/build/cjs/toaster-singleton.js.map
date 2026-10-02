@@ -1,0 +1,1 @@
+{"version":3,"file":"toaster-singleton.js","sourceRoot":"../../src","sources":["toaster-singleton.ts"],"names":[],"mappings":";;;AAAA,6DAAqD;AAExC,QAAA,OAAO,GAAG,IAAI,iBAAO,EAAE,CAAC","sourcesContent":["import {Toaster} from './components/Toaster/Toaster';\n\nexport const toaster = new Toaster();\n"]}

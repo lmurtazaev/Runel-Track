@@ -1,0 +1,1 @@
+{"version":3,"file":"index.js","sourceRoot":"../../../../../src","sources":["components/lab/ColorPicker/index.ts"],"names":[],"mappings":"AAAA,OAAO,EAAC,WAAW,EAAwB,yBAAsB","sourcesContent":["export {ColorPicker, type ColorPickerProps} from './ColorPicker';\n"]}

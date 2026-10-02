@@ -1,0 +1,26 @@
+.g-tree-select {
+  display: inline-block;
+  max-width: 100%;
+}
+.g-tree-select_width_max {
+  width: 100%;
+}
+.g-tree-select__popup {
+  padding: 4px 0;
+  overflow: hidden;
+}
+.g-tree-select__popup_size_s {
+  border-radius: var(--g-list-container-border-radius, 5px);
+}
+.g-tree-select__popup_size_m {
+  border-radius: var(--g-list-container-border-radius, 6px);
+}
+.g-tree-select__popup_size_l {
+  border-radius: var(--g-list-container-border-radius, 8px);
+}
+.g-tree-select__popup_size_xl {
+  border-radius: var(--g-list-container-border-radius, 10px);
+}
+.g-tree-select__list {
+  padding: 0 4px;
+}

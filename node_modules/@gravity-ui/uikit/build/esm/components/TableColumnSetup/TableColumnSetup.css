@@ -1,0 +1,4 @@
+.g-table-column-setup__status {
+  margin-inline-start: 5px;
+  color: var(--g-color-text-secondary);
+}

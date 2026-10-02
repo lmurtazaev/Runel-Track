@@ -1,0 +1,11 @@
+.g-pagination {
+  display: flex;
+}
+.g-pagination__pagination-item {
+  margin-inline-end: 4px;
+  flex-shrink: 0;
+}
+.g-pagination__input, .g-pagination__page-sizer {
+  margin: 0 4px;
+  flex-shrink: 0;
+}

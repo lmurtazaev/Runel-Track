@@ -1,0 +1,1 @@
+{"version":3,"file":"index.js","sourceRoot":"../../../../src","sources":["components/ClipboardIcon/index.ts"],"names":[],"mappings":";;;AAAA,6DAAgC","sourcesContent":["export * from './ClipboardIcon';\n"]}

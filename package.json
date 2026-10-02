@@ -1,0 +1,71 @@
+{
+    "name": "runel-track",
+    "version": "0.1.0",
+    "private": true,
+    "type": "module",
+    "packageManager": "npm@11.6.4",
+    "keywords": [
+        "react",
+        "vite",
+        "template",
+        "typescript",
+        "gravity",
+        "uikit",
+        "sass"
+    ],
+    "description": "Plugin template",
+    "engines": {
+        "node": ">=22.12.0"
+    },
+    "scripts": {
+        "dev": "node node_modules/vite/bin/vite.js",
+        "build": "tsc && node node_modules/vite/bin/vite.js build",
+        "lint:js": "eslint --ext .js,.jsx,.ts,.tsx .",
+        "lint:styles": "stylelint '{styles,src}/**/*.{css,scss}' --allow-empty-input",
+        "typecheck": "tsc",
+        "lint": "npm run lint:js && npm run lint:styles && npm run typecheck"
+    },
+    "dependencies": {
+        "@gravity-ui/icons": "2.22.0",
+        "@gravity-ui/uikit": "7.49.0",
+        "@weavix/tracker-api-plugin": "^0.1.7",
+        "@weavix/tracker-api-types": "^0.0.12",
+        "@weavix/tracker-components": "0.1.5",
+        "@weavix/tracker-plugin-sdk": "0.1.6",
+        "@weavix/tracker-plugin-sdk-react": "0.1.6",
+        "react": "18.3.1",
+        "react-dom": "18.3.1"
+    },
+    "devDependencies": {
+        "@gravity-ui/browserslist-config": "4.4.0",
+        "@gravity-ui/eslint-config": "4.2.0",
+        "@gravity-ui/prettier-config": "1.1.0",
+        "@gravity-ui/stylelint-config": "4.0.0",
+        "@gravity-ui/tsconfig": "1.0.0",
+        "@types/node": "25.9.5",
+        "@types/react": "18.2.37",
+        "@types/react-dom": "18.2.15",
+        "@vitejs/plugin-react": "6.0.1",
+        "eslint": "9.39.5",
+        "husky": "9.1.7",
+        "sass": "1.103.1",
+        "typescript": "5.8.3",
+        "vite": "8.3.0",
+        "vite-plugin-svgr": "5.2.0"
+    },
+    "browserslist": [
+        "extends @gravity-ui/browserslist-config"
+    ],
+    "lint-staged": {
+        "*.{css,scss}": [
+            "stylelint --fix --quiet"
+        ],
+        "*.{js,jsx,ts,tsx}": [
+            "eslint --fix --quiet",
+            "prettier --write"
+        ],
+        "*.md": [
+            "prettier --write"
+        ]
+    }
+}

@@ -1,0 +1,61 @@
+{
+  "$schema": "./manifest.schema.json",
+  "manifest_version": 1,
+  "version": "1.0.0",
+  "slug": "runel-track",
+  "name": {
+    "ru": "Runel Таймер",
+    "en": "Runel Time Tracker"
+  },
+  "description": {
+    "ru": "Runel Таймер - виджет учёта времени с таймером (старт/стоп/пауза) и отправкой в worklog",
+    "en": "RunelTrack is a lightweight time-tracking plugin for Yandex Tracker that helps you track time spent on tasks with ease. Start and stop the timer directly from your workflow, keep your time logs accurate, and stay focused on what matters."
+  },
+  "support": [{ "type": "email", "value": "mulenur@yandex.ru" }],
+  "license": "MIT",
+  "slots": {
+    "tracker": {
+      "issue.block": [
+        {
+          "entrypoint": "index.html",
+          "title": {
+            "ru": "Таймер",
+            "en": "Timer"
+          },
+          "contextLevel": "full"
+        }
+      ],
+      "drawer.issue.block": [
+        {
+          "entrypoint": "index.html",
+          "title": {
+            "ru": "Таймер",
+            "en": "Timer"
+          },
+          "contextLevel": "full"
+        }
+      ],
+      "navigation": [
+        {
+          "entrypoint": "index.html",
+          "title": {
+            "ru": "Отчёты по времени",
+            "en": "Time Reports"
+          },
+          "contextLevel": "basic"
+        }
+      ]
+    }
+  },
+  "permissions": {
+    "data": [
+      "tracker:issues:read",
+      "tracker:issues:write",
+      "tracker:resources:read",
+      "tracker:resources:write",
+      "tracker:worklog:read",
+      "tracker:worklog:write"
+    ],
+    "ui": ["toaster", "confirm"]
+  }
+ }

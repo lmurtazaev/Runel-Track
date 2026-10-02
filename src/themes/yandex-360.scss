@@ -1,0 +1,197 @@
+@use './yandex-360/light' as *;
+@use './yandex-360/light-hc' as *;
+@use './yandex-360/dark' as *;
+@use './yandex-360/dark-hc' as *;
+
+@mixin ya-360-colors-light {
+    @include ya-360-colors-private-light;
+
+    --g-color-base-background: rgb(255, 255, 255);
+    --g-color-base-brand: var(--g-color-private-blue-550-solid);
+    --g-color-base-brand-hover: var(--g-color-private-blue-600-solid);
+    --g-color-base-selection: var(--g-color-private-blue-100);
+    --g-color-base-selection-hover: var(--g-color-private-blue-200);
+    --g-color-line-brand: var(--g-color-private-blue-550-solid);
+    --g-color-text-brand: var(--g-color-private-blue-600-solid);
+    --g-color-text-brand-heavy: var(--g-color-private-blue-700-solid);
+    --g-color-text-brand-contrast: var(--g-color-text-light-primary);
+    --g-color-text-link: var(--g-color-private-blue-600-solid);
+    --g-color-text-link-hover: var(--g-color-private-blue-800-solid);
+
+    --gn-aside-header-decoration-collapsed-background-color: var(--g-color-private-blue-100);
+    --gn-aside-header-decoration-expanded-background-color: var(--g-color-private-blue-100);
+    --gn-aside-header-item-background-color-hover: var(--g-color-private-black-50);
+    --gn-aside-header-item-current-background-color: var(--g-color-private-blue-100);
+
+    --gil-color-object-base: var(--g-color-private-blue-550-solid);
+    --gil-color-object-accent-heavy: var(--g-color-private-blue-750-solid);
+    --gil-color-object-hightlight: var(--g-color-private-blue-350-solid);
+    --gil-color-shadow-over-object: var(--g-color-private-blue-700-solid);
+    --gil-color-background-lines: var(--g-color-private-black-450-solid);
+    --gil-color-background-shapes: var(--g-color-private-black-50-solid);
+    --gil-color-object-accent-light: var(--g-color-private-white-1000-solid);
+    --gil-color-object-danger: var(--g-color-private-red-550-solid);
+}
+
+@mixin ya-360-colors-light-hc {
+    @include ya-360-colors-private-light-hc;
+
+    --g-color-base-background: rgb(255, 255, 255);
+    --g-color-base-brand: var(--g-color-private-blue-600-solid);
+    --g-color-base-brand-hover: var(--g-color-private-blue-800-solid);
+    --g-color-base-selection: var(--g-color-private-blue-250);
+    --g-color-base-selection-hover: var(--g-color-private-blue-350);
+    --g-color-line-brand: var(--g-color-private-blue-600-solid);
+    --g-color-text-brand: var(--g-color-private-blue-650-solid);
+    --g-color-text-brand-heavy: var(--g-color-private-blue-900-solid);
+    --g-color-text-brand-contrast: var(--g-color-text-light-primary);
+    --g-color-text-link: var(--g-color-private-blue-650-solid);
+    --g-color-text-link-hover: var(--g-color-private-blue-850-solid);
+
+    --gn-aside-header-decoration-collapsed-background-color: var(--g-color-private-blue-250);
+    --gn-aside-header-decoration-expanded-background-color: var(--g-color-private-blue-250);
+    --gn-aside-header-item-current-background-color: var(--g-color-private-blue-250);
+    --gn-aside-header-item-background-color-hover: var(--g-color-private-black-150);
+
+    --gil-color-object-base: var(--g-color-private-blue-550-solid);
+    --gil-color-object-accent-heavy: var(--g-color-private-blue-750-solid);
+    --gil-color-object-hightlight: var(--g-color-private-blue-350-solid);
+    --gil-color-shadow-over-object: var(--g-color-private-blue-700-solid);
+    --gil-color-background-lines: var(--g-color-private-black-450-solid);
+    --gil-color-background-shapes: var(--g-color-private-black-50-solid);
+    --gil-color-object-accent-light: var(--g-color-private-white-1000-solid);
+    --gil-color-object-danger: var(--g-color-private-red-550-solid);
+}
+
+@mixin ya-360-colors-dark {
+    @include ya-360-colors-private-dark;
+
+    --g-color-base-background: rgb(45, 44, 51);
+    --g-color-base-brand: var(--g-color-private-blue-450-solid);
+    --g-color-base-brand-hover: var(--g-color-private-blue-600-solid);
+    --g-color-base-selection: var(--g-color-private-blue-150);
+    --g-color-base-selection-hover: var(--g-color-private-blue-200);
+    --g-color-line-brand: var(--g-color-private-blue-550-solid);
+    --g-color-text-brand: var(--g-color-private-blue-550-solid);
+    --g-color-text-brand-heavy: var(--g-color-private-blue-600-solid);
+    --g-color-text-brand-contrast: var(--g-color-text-light-primary);
+    --g-color-text-link: var(--g-color-private-blue-550-solid);
+    --g-color-text-link-hover: var(--g-color-private-blue-700-solid);
+
+    --gn-aside-header-decoration-collapsed-background-color: var(--g-color-private-blue-150);
+    --gn-aside-header-decoration-expanded-background-color: var(--g-color-private-blue-150);
+    --gn-aside-header-item-current-background-color: var(--g-color-private-blue-150);
+    --gn-aside-header-item-background-color-hover: var(--g-color-private-white-100);
+
+    --gil-color-object-base: var(--g-color-private-blue-550-solid);
+    --gil-color-object-accent-heavy: var(--g-color-private-blue-350-solid);
+    --gil-color-object-hightlight: var(--g-color-private-blue-650-solid);
+    --gil-color-shadow-over-object: var(--g-color-private-blue-300-solid);
+    --gil-color-background-lines: var(--g-color-private-white-550-solid);
+    --gil-color-background-shapes: var(--g-color-private-white-200-solid);
+    --gil-color-object-accent-light: var(--g-color-private-white-1000-solid);
+    --gil-color-object-danger: var(--g-color-private-red-550-solid);
+}
+
+@mixin ya-360-colors-dark-hc {
+    @include ya-360-colors-private-dark-hc;
+
+    --g-color-base-background: rgb(34, 35, 38);
+    --g-color-base-brand: var(--g-color-private-blue-450-solid);
+    --g-color-base-brand-hover: var(--g-color-private-blue-650-solid);
+    --g-color-base-selection: var(--g-color-private-blue-250);
+    --g-color-base-selection-hover: var(--g-color-private-blue-400);
+    --g-color-line-brand: var(--g-color-private-blue-550-solid);
+    --g-color-text-brand: var(--g-color-private-blue-650-solid);
+    --g-color-text-brand-heavy: var(--g-color-private-blue-850-solid);
+    --g-color-text-brand-contrast: var(--g-color-text-light-primary);
+    --g-color-text-link: var(--g-color-private-blue-650-solid);
+    --g-color-text-link-hover: var(--g-color-private-blue-800-solid);
+
+    --gn-aside-header-decoration-collapsed-background-color: var(--g-color-private-blue-250);
+    --gn-aside-header-decoration-expanded-background-color: var(--g-color-private-blue-250);
+    --gn-aside-header-item-current-background-color: var(--g-color-private-blue-250);
+    --gn-aside-header-item-background-color-hover: var(--g-color-private-white-250);
+
+    --gil-color-object-base: var(--g-color-private-blue-550-solid);
+    --gil-color-object-accent-heavy: var(--g-color-private-blue-750-solid);
+    --gil-color-object-hightlight: var(--g-color-private-blue-350-solid);
+    --gil-color-shadow-over-object: var(--g-color-private-blue-300-solid);
+    --gil-color-background-lines: var(--g-color-private-white-550-solid);
+    --gil-color-background-shapes: var(--g-color-private-white-200-solid);
+    --gil-color-object-accent-light: var(--g-color-private-white-1000-solid);
+    --gil-color-object-danger: var(--g-color-private-red-550-solid);
+}
+
+.g-root {
+    --g-font-family-sans: 'YS Text', 'Helvetica Neue', 'Arial', 'Helvetica', sans-serif;
+    --g-font-family-monospace:
+        'Menlo', 'Monaco', 'Consolas', 'Liberation Mono', 'Ubuntu Mono', 'DejaVu Sans Mono',
+        'Courier New', 'Courier', monospace;
+
+    --g-text-header-font-family:
+        'YS Display Wide', 'Helvetica Neue', 'Arial', 'Helvetica', sans-serif;
+    --g-text-subheader-font-family:
+        'YS Display Wide', 'Helvetica Neue', 'Arial', 'Helvetica', sans-serif;
+
+    --g-text-header-font-weight: 500;
+    --g-text-subheader-font-weight: 500;
+    --g-text-display-font-weight: 500;
+    --g-text-accent-font-weight: 500;
+
+    --g-text-body-1-font-size: 14px;
+    --g-text-body-1-line-height: 18px;
+
+    --g-text-body-2-font-size: 14px;
+    --g-text-body-2-line-height: 20px;
+
+    --g-text-body-3-font-size: 16px;
+    --g-text-body-3-line-height: 24px;
+
+    --g-text-body-short-font-size: 14px;
+    --g-text-body-short-line-height: 18px;
+
+    --g-text-caption-1-font-size: 11px;
+    --g-text-caption-1-line-height: 12px;
+
+    --g-text-caption-2-font-size: 12px;
+    --g-text-caption-2-line-height: 16px;
+
+    --g-text-subheader-1-font-size: 14px;
+    --g-text-subheader-1-line-height: 18px;
+
+    --g-text-subheader-2-font-size: 16px;
+    --g-text-subheader-2-line-height: 20px;
+
+    --g-text-subheader-3-font-size: 16px;
+    --g-text-subheader-3-line-height: 24px;
+
+    --g-text-subheader-3-font: 700 var(--g-text-subheader-3-font-size) /
+        var(--g-text-subheader-3-font-size) var(--g-text-subheader-font-family);
+
+    --g-border-radius-xs: 1000px;
+    --g-border-radius-s: 8px;
+    --g-border-radius-m: 10px;
+    --g-border-radius-l: 12px;
+    --g-border-radius-xl: 16px;
+    --g-border-radius-2xl: 24px;
+
+    --gn-aside-header-background-color: var(--g-color-base-background);
+    --gn-aside-header-item-icon-color: var(--g-color-text-misc);
+
+    &_theme_light {
+        @include ya-360-colors-light;
+    }
+
+    &_theme_light-hc {
+        @include ya-360-colors-light-hc;
+    }
+
+    &_theme_dark {
+        @include ya-360-colors-dark;
+    }
+
+    &_theme_dark-hc {
+        @include ya-360-colors-dark-hc;
+    }
+}

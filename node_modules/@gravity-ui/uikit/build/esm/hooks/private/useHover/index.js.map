@@ -1,0 +1,1 @@
+{"version":3,"file":"index.js","sourceRoot":"../../../../../src","sources":["hooks/private/useHover/index.ts"],"names":[],"mappings":"AAAA,OAAO,EAAC,QAAQ,EAAC,sBAAmB","sourcesContent":["export {useHover} from './useHover';\nexport type {UseHoverResult} from './useHover';\n"]}

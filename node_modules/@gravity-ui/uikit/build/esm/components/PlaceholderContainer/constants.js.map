@@ -1,0 +1,1 @@
+{"version":3,"file":"constants.js","sourceRoot":"../../../../src","sources":["components/PlaceholderContainer/constants.ts"],"names":[],"mappings":"AAAA,MAAM,CAAC,MAAM,kBAAkB,GAAG,uBAAuB,CAAC","sourcesContent":["export const componentClassName = 'placeholder-container';\n"]}

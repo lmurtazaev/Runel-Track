@@ -1,0 +1,1 @@
+{"version":3,"file":"index.js","sourceRoot":"../../../../../src","sources":["components/legacy/Tabs/index.ts"],"names":[],"mappings":"AAAA,0BAAuB","sourcesContent":["export * from './Tabs';\n"]}

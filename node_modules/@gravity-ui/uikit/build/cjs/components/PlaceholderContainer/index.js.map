@@ -1,0 +1,1 @@
+{"version":3,"file":"index.js","sourceRoot":"../../../../src","sources":["components/PlaceholderContainer/index.ts"],"names":[],"mappings":";;;AAAA,oEAAuC;AACvC,qDAAwB","sourcesContent":["export * from './PlaceholderContainer';\nexport * from './types';\n"]}

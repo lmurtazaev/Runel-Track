@@ -1,0 +1,19 @@
+.g-table__copy {
+  display: inline-flex;
+  align-items: center;
+}
+.g-table__copy-content {
+  margin-inline-end: 5px;
+}
+.g-table__copy-button {
+  line-height: 0;
+  visibility: hidden;
+  color: var(--g-color-text-secondary);
+  opacity: 0.5;
+}
+.g-table__copy-button:hover {
+  opacity: 1;
+}
+.g-table__cell:hover .g-table__copy-button {
+  visibility: visible;
+}

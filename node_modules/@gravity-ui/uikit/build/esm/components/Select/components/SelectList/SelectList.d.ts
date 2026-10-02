@@ -1,0 +1,25 @@
+import * as React from 'react';
+import { List } from "../../../List/index.js";
+import type { SelectProps } from "../../types.js";
+import type { FlattenOption } from "../../utils.js";
+import "./SelectList.css";
+type SelectListProps = {
+    mobile: boolean;
+    onOptionClick: (option: FlattenOption) => void;
+    renderOption?: SelectProps['renderOption'];
+    renderOptionGroup?: SelectProps['renderOptionGroup'];
+    getOptionHeight?: SelectProps['getOptionHeight'];
+    getOptionGroupHeight?: SelectProps['getOptionGroupHeight'];
+    size: NonNullable<SelectProps['size']>;
+    value: NonNullable<SelectProps['value']>;
+    flattenOptions: FlattenOption[];
+    multiple?: boolean;
+    virtualized?: boolean;
+    loading?: boolean;
+    onLoadMore?: () => void;
+    id: string;
+    activeIndex?: number;
+    onChangeActive: (index?: number) => void;
+};
+export declare const SelectList: React.ForwardRefExoticComponent<SelectListProps & React.RefAttributes<List<FlattenOption>>>;
+export {};

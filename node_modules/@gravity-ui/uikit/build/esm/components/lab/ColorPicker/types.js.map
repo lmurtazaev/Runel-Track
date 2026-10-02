@@ -1,0 +1,1 @@
+{"version":3,"file":"types.js","sourceRoot":"../../../../../src","sources":["components/lab/ColorPicker/types.ts"],"names":[],"mappings":"AAAA,MAAM,CAAN,IAAY,KAGX;AAHD,WAAY,KAAK;IACb,oBAAW,CAAA;IACX,oBAAW,CAAA;AACf,CAAC,EAHW,KAAK,KAAL,KAAK,QAGhB","sourcesContent":["export enum Modes {\n    Hex = 'HEX',\n    Rgb = 'RGB',\n}\n"]}

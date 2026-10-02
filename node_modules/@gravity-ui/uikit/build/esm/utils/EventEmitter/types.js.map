@@ -1,0 +1,1 @@
+{"version":3,"file":"types.js","sourceRoot":"../../../../src","sources":["utils/EventEmitter/types.ts"],"names":[],"mappings":"","sourcesContent":["export type EventListeners<T extends Record<string, unknown[]>> = {\n    [Event in keyof T]?: ((...args: T[Event]) => void)[];\n};\n"]}

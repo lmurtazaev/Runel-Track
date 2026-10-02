@@ -1,0 +1,1 @@
+{"version":3,"file":"index.js","sourceRoot":"../../../../src","sources":["components/ControlLabel/index.ts"],"names":[],"mappings":";;;AAAA,kDAA4C;AAApC,4GAAA,YAAY,OAAA","sourcesContent":["export {ControlLabel} from './ControlLabel';\nexport type {Size as ControlLabelSize, Props as ControlLabelProps} from './types';\n"]}

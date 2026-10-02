@@ -1,0 +1,1 @@
+{"version":3,"file":"index.js","sourceRoot":"../../../../src","sources":["hooks/useOutsideClick/index.ts"],"names":[],"mappings":";;;AAAA,wDAAkD;AAA1C,kHAAA,eAAe,OAAA","sourcesContent":["export {useOutsideClick} from './useOutsideClick';\nexport type {UseOutsideClickProps} from './useOutsideClick';\n"]}

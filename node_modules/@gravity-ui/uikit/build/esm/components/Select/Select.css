@@ -1,0 +1,7 @@
+.g-select {
+  display: inline-block;
+  max-width: 100%;
+}
+.g-select_width_max {
+  width: 100%;
+}

@@ -1,0 +1,7 @@
+.g-select-empty-placeholder {
+  margin: 4px;
+  color: var(--g-color-text-hint);
+}
+.g-select-empty-placeholder_empty {
+  margin-block-start: 0;
+}

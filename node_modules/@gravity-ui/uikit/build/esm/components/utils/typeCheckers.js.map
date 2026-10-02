@@ -1,0 +1,1 @@
+{"version":3,"file":"typeCheckers.js","sourceRoot":"../../../../src","sources":["components/utils/typeCheckers.ts"],"names":[],"mappings":"AAAA,MAAM,CAAC,MAAM,UAAU,GAAG,CAAC,KAAc,EAAqB,EAAE,CAAC,OAAO,KAAK,KAAK,UAAU,CAAC","sourcesContent":["export const isFunction = (value: unknown): value is Function => typeof value === 'function';\n"]}

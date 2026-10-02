@@ -1,0 +1,21 @@
+# Build output
+dist/
+build/
+*.tsbuildinfo
+
+# IDE
+.DS_Store
+.vscode/
+.idea/
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Environment
+.env
+.env.local
+
+config.json
+.tracker-plugin
