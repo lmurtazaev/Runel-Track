@@ -7,6 +7,6 @@ export default [
   ...prettierConfig, 
   ...importOrderConfig,
   {
-    ignores: ['**/*.mjs', '**/*.cjs', '**/*.js', '**/*.d.ts'],
+    ignores: ['**/*.mjs', '**/*.cjs', '**/*.js', '**/*.d.ts', 'node_modules/', 'docs-build/', 'dist/', 'build/', 'docs/', 'marketplace/', 'public/', 'design/', '.git/', '*.min.js'],
   }
 ];
