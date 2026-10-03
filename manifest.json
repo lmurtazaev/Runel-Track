@@ -5,7 +5,8 @@
   "slug": "runel-track",
   "name": {
     "ru": "ВоркТаймер",
-    "en": "WorkTimer"
+    "en": "WorkTimer",
+  "docsUrl": "/docs/index.html"
   },
   "description": {
     "ru": "Учёт времени в карточке задачи с автоматической записью в ворклоги",
