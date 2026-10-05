@@ -5,7 +5,7 @@ import {
   storageApi,
   uiApi,
 } from '@weavix/tracker-plugin-sdk-react';
-import { Button, Table } from '@gravity-ui/uikit';
+import { Button } from '@gravity-ui/uikit';
 
 // --- Глобальные стили ---
 const globalStyles = `
@@ -134,9 +134,14 @@ function extractIssueKey(w: any): string {
   return '';
 }
 
+let _parseLogCount = 0;
 function parseDurationToMs(w: any): number {
   let val = w.duration;
   if (val == null) return 0;
+  if (_parseLogCount < 3) {
+    _parseLogCount++;
+    console.log('parseDurationToMs sample:', { type: typeof val, value: JSON.stringify(val), start: w.start, id: w.id });
+  }
   if (typeof val === 'number') {
     if (val > 100000) return val;
     if (val > 1000) return val * 1000;
@@ -498,14 +503,99 @@ function GlobalTimer() {
   );
 }
 
+// --- Date helpers ---
+function getMonthRange(): [string, string] {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = now.getMonth();
+  const first = new Date(y, m, 1);
+  const last = new Date(y, m + 1, 0);
+  return [first.getFullYear() + '-' + pad2(first.getMonth() + 1) + '-' + pad2(first.getDate()),
+          last.getFullYear() + '-' + pad2(last.getMonth() + 1) + '-' + pad2(last.getDate())];
+}
+
+function addDays(dateStr: string, days: number): string {
+  const d = new Date(dateStr + 'T00:00:00');
+  d.setDate(d.getDate() + days);
+  return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate());
+}
+
+function daysBetween(from: string, to: string): number {
+  const d1 = new Date(from + 'T00:00:00');
+  const d2 = new Date(to + 'T00:00:00');
+  return Math.round((d2.getTime() - d1.getTime()) / 86400000) + 1;
+}
+
+function generateDateRange(from: string, to: string): string[] {
+  const days = daysBetween(from, to);
+  const dates: string[] = [];
+  for (let i = 0; i < days; i++) dates.push(addDays(from, i));
+  return dates;
+}
+
+const WEEKDAY_SHORT = ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
+const MONTH_NAMES = [
+  'Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь',
+  'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'
+];
+
+function formatDateHeader(dateStr: string): string {
+  const d = new Date(dateStr + 'T00:00:00');
+  const wd = WEEKDAY_SHORT[d.getDay()];
+  return wd + ' ' + pad2(d.getDate()) + '.' + pad2(d.getMonth() + 1);
+}
+
+function isWeekend(dateStr: string): boolean {
+  const d = new Date(dateStr + 'T00:00:00');
+  return d.getDay() === 0 || d.getDay() === 6;
+}
+
+function isFullMonth(from: string, to: string): boolean {
+  const d1 = new Date(from + 'T00:00:00');
+  const d2 = new Date(to + 'T00:00:00');
+  if (d1.getDate() !== 1) return false;
+  const lastDay = new Date(d1.getFullYear(), d1.getMonth() + 1, 0).getDate();
+  return d2.getDate() === lastDay && d1.getMonth() === d2.getMonth() && d1.getFullYear() === d2.getFullYear();
+}
+
+function periodLabel(from: string, to: string): string {
+  if (isFullMonth(from, to)) {
+    const d = new Date(from + 'T00:00:00');
+    return MONTH_NAMES[d.getMonth()] + ' ' + d.getFullYear();
+  }
+  const fmt = (s: string) => {
+    const d = new Date(s + 'T00:00:00');
+    return pad2(d.getDate()) + '.' + pad2(d.getMonth() + 1) + '.' + d.getFullYear();
+  };
+  return fmt(from) + ' — ' + fmt(to);
+}
+
 // --- ReportsView ---
 function ReportsView() {
-  const [rows, setRows] = useState<any[]>([]);
+  const [worklogs, setWorklogs] = useState<any[]>([]);
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
   const [loading, setLoading] = useState(true);
   const [debugInfo, setDebugInfo] = useState('');
+  const [selectedQueues, setSelectedQueues] = useState<Set<string>>(new Set());
+  const [queueFilterOpen, setQueueFilterOpen] = useState(false);
   const { slotContext } = useTrackerPluginContext();
+  const fetchedRef = useRef(false);
+  const [viewMode, setViewMode] = useState<'table' | 'list'>('table');
 
+  // Init default date range = current month
   useEffect(() => {
+    const [f, t] = getMonthRange();
+    setDateFrom(f);
+    setDateTo(t);
+  }, []);
+
+  // Fetch worklogs (once, not per date change)
+  useEffect(() => {
+    if (!dateFrom || !dateTo) return;
+    if (fetchedRef.current) return;
+    fetchedRef.current = true;
+    console.log('[ReportsView] Starting data fetch...');
     (async () => {
       try {
         let userId: string | null = localStorage.getItem(USER_ID_KEY);
@@ -514,107 +604,547 @@ function ReportsView() {
           const u = (slotContext as any)?.user;
           if (u && u.id) userId = String(u.id);
         }
-        console.log('ReportsView - userId:', userId);
-
         if (!userId) {
           setDebugInfo('User ID не найден. Отправьте время хотя бы один раз — ID сохранится автоматически.');
           setLoading(false);
           return;
         }
 
-        console.log('Fetching worklogs for user:', userId);
-		let allWorklogs: any[] = [];
-		let page = 1;
-		const perPage = 100;
-		let hasMore = true;
-		
-		while (hasMore) {
-		  console.log('Fetching page', page);
-		  const worklogsRes = await trackerApi.v3.get['/worklog']({
-		    queryParams: { createdBy: [userId] as any, perPage, page } as any,
-		  });
-		  const batch = (worklogsRes as any)?.data || [];
-		  allWorklogs = allWorklogs.concat(batch);
-		  console.log('Page', page, 'got', batch.length, 'worklogs, total so far:', allWorklogs.length);
-		  hasMore = batch.length === perPage;
-		  page++;
-		}
-		
-		const worklogs = allWorklogs;
-		console.log('Worklogs received (total):', worklogs.length);
+        let allWorklogs: any[] = [];
+        let page = 1;
+        const perPage = 100;
+        let hasMore = true;
+        const maxPages = 50;
+        const seenIds = new Set<string>();
 
-        if (worklogs.length > 0) console.log('First worklog sample:', JSON.stringify(worklogs[0]));
-
-        if (worklogs.length === 0) {
-          setRows([]); setDebugInfo('Нет записей о затраченном времени.');
-          setLoading(false);
-          return;
-        }
-
-        const durationByIssue: Record<string, number> = {};
-        for (const w of worklogs) {
-          const key = extractIssueKey(w);
-          const ms = parseDurationToMs(w);
-          if (key) {
-            durationByIssue[key] = (durationByIssue[key] || 0) + ms;
+        while (hasMore && page <= maxPages) {
+          const worklogsRes = await trackerApi.v3.get['/worklog']({
+            queryParams: { createdBy: [userId] as any, perPage, page } as any,
+          });
+          const batch = (worklogsRes as any)?.data || [];
+          if (batch.length === 0) { hasMore = false; break; }
+          let duplicates = 0;
+          for (const w of batch) {
+            const id = w.id || w._id || (w.self ? String(w.self).split('/').pop() : '');
+            if (id && seenIds.has(id)) { duplicates++; continue; }
+            if (id) seenIds.add(id);
+            allWorklogs.push(w);
           }
+          console.log('Worklogs page', page, ': got', batch.length, 'dupes:', duplicates, 'total unique:', allWorklogs.length);
+          hasMore = batch.length === perPage && duplicates < batch.length;
+          page++;
         }
-        console.log('Duration by issue:', durationByIssue);
+        console.log('Total unique worklogs:', allWorklogs.length);
 
-        const issueKeys = Object.keys(durationByIssue);
-        console.log('Issue keys found:', issueKeys.length, issueKeys);
-        if (issueKeys.length === 0) {
-          setRows([]); setDebugInfo('Не удалось извлечь ключи задач из ворклогов.');
+        if (allWorklogs.length === 0) {
+          setDebugInfo('Нет записей о затраченном времени.');
           setLoading(false);
           return;
         }
 
-        console.log('Searching issues...');
+        // Fetch issue info
+        const issueKeysSet = new Set<string>();
+        for (const w of allWorklogs) {
+          const key = extractIssueKey(w);
+          if (key) issueKeysSet.add(key);
+        }
+        const issueKeys = Array.from(issueKeysSet);
+
         const issuesRes = await trackerApi.v3.post['/issues/_search']({
           bodyParams: { keys: issueKeys, orderAsc: false, order: 'updated', fields: ['summary', 'queue'] },
         });
         const issues = (issuesRes as any)?.data || [];
-        console.log('Issues found:', issues.length);
 
-        const formattedRows = issues.map((issue: any) => ({
-          key: issue.key,
-          summary: issue.summary || '',
-          queue: (issue.queue && issue.queue.key) || '',
-          totalDuration: durationByIssue[issue.key] || 0,
-        }));
-        console.log('Formatted rows:', formattedRows.length, formattedRows);
+        // Build issue lookup
+        const issueMap: Record<string, { key: string; summary: string; queue: string }> = {};
+        for (const issue of issues) {
+          issueMap[issue.key] = {
+            key: issue.key,
+            summary: issue.summary || '',
+            queue: (issue.queue && issue.queue.key) || '',
+          };
+        }
 
-        setRows(formattedRows);
+        // Attach issue info to worklogs and store
+        const enriched = allWorklogs.map((w) => {
+          const key = extractIssueKey(w);
+          const ms = parseDurationToMs(w);
+          let startDate = '';
+          if (w.start) {
+            const d = new Date(w.start);
+            startDate = d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate());
+          }
+          const info = issueMap[key] || { key, summary: '', queue: key.split('-')[0] || '' };
+          return { ...w, _issueKey: key, _durationMs: ms, _startDate: startDate, _queue: info.queue, _summary: info.summary, _comment: w.comment || '' };
+        });
+
+        // Debug: log total time
+        let totalMs = 0;
+        for (const w of enriched) totalMs += w._durationMs;
+        console.log('Total duration across all worklogs:', formatDuration(totalMs), '(' + enriched.length + ' worklogs)');
+        setWorklogs(enriched);
       } catch (e) {
-        console.log('Reports error:', e);
         setDebugInfo('Ошибка: ' + (e as any)?.message);
       } finally {
+      	console.log('useEffect: done, setting loading=false');
         setLoading(false);
       }
     })();
-  }, [slotContext]);
+  }, [dateFrom, dateTo]);
+
+  // Navigation handlers
+  const handlePrev = () => {
+    const span = daysBetween(dateFrom, dateTo);
+    setDateFrom(addDays(dateFrom, -span));
+    setDateTo(addDays(dateTo, -span));
+  };
+  const handleNext = () => {
+    const span = daysBetween(dateFrom, dateTo);
+    setDateFrom(addDays(dateFrom, span));
+    setDateTo(addDays(dateTo, span));
+  };
 
   if (loading) return <div style={{ padding: '20px' }}>Загрузка…</div>;
-  if (rows.length === 0) return <div style={{ padding: '20px', color: '#666' }}>{debugInfo || 'Нет записей о затраченном времени.'}</div>;
+  if (worklogs.length === 0) return <div style={{ padding: '20px', color: '#666' }}>{debugInfo || 'Нет записей о затраченном времени.'}</div>;
+  if (!dateFrom || !dateTo) return <div style={{ padding: '20px' }}>Загрузка дат…</div>;
 
-  const columns = [
-    { id: 'key', name: 'Задача' },
-    { id: 'summary', name: 'Описание' },
-    { id: 'queue', name: 'Очередь' },
-    { id: 'totalDuration', name: 'Время' },
-  ];
+  // Filter worklogs by date range
+  const filtered = worklogs.filter((w) => w._startDate >= dateFrom && w._startDate <= dateTo);
 
-  const tableData = rows.map(r => ({
-    id: r.key,
-    key: r.key,
-    summary: r.summary,
-    queue: r.queue,
-    totalDuration: formatDuration(r.totalDuration),
-  }));
+  // Generate date columns
+  const dates = generateDateRange(dateFrom, dateTo);
+
+  // Get all available queues from filtered worklogs
+  const allQueues = Array.from(new Set(filtered.map((w) => w._queue || '—'))).sort();
+  const activeQueues = selectedQueues.size === 0 ? allQueues : allQueues.filter((q) => selectedQueues.has(q));
+  const queueFiltered = filtered.filter((w) => activeQueues.includes(w._queue || '—'));
+
+  // Group by queue -> issue, with worklog entries
+  const queueMap: Record<string, Record<string, {
+    key: string;
+    summary: string;
+    byDay: Record<string, number>;
+    worklogs: { day: string; durationMs: number; comment: string }[];
+  }>> = {};
+  for (const w of queueFiltered) {
+    const queue = w._queue || '—';
+    const issueKey = w._issueKey || '?';
+    if (!queueMap[queue]) queueMap[queue] = {};
+    if (!queueMap[queue][issueKey]) {
+      queueMap[queue][issueKey] = { key: issueKey, summary: w._summary || '', byDay: {}, worklogs: [] };
+    }
+    const day = w._startDate;
+    queueMap[queue][issueKey].byDay[day] = (queueMap[queue][issueKey].byDay[day] || 0) + w._durationMs;
+    if (day >= dateFrom && day <= dateTo) {
+      queueMap[queue][issueKey].worklogs.push({ day, durationMs: w._durationMs, comment: w._comment || '' });
+    }
+  }
+
+  // Sort queues alphabetically
+  const queues = Object.keys(queueMap).sort();
+
+  // Compute subtotals per queue per day
+  function queueDayTotal(queue: string, day: string): number {
+    let total = 0;
+    for (const issueKey of Object.keys(queueMap[queue])) {
+      total += queueMap[queue][issueKey].byDay[day] || 0;
+    }
+    return total;
+  }
+
+  function queueTotal(queue: string): number {
+    let total = 0;
+    for (const d of dates) total += queueDayTotal(queue, d);
+    return total;
+  }
+
+  // Grand totals per day
+  const grandDayTotals: Record<string, number> = {};
+  let grandTotal = 0;
+  for (const day of dates) {
+    grandDayTotals[day] = 0;
+    for (const q of queues) grandDayTotals[day] += queueDayTotal(q, day);
+    grandTotal += grandDayTotals[day];
+  }
+
+  // --- Styles ---
+  const COL_Q = 80;
+  const COL_K = 80;
+  const COL_N = 250;
+  const LEFT_T = COL_Q + COL_K + COL_N;
+
+  const thStyle: React.CSSProperties = {
+    padding: '6px 10px',
+    borderBottom: '2px solid rgba(128,128,128,0.4)',
+    textAlign: 'left',
+    fontSize: '12px',
+    fontWeight: 600,
+    whiteSpace: 'nowrap',
+    position: 'sticky',
+    top: 0,
+    zIndex: 1,
+    backgroundColor: 'rgba(230,230,230,1)',
+  };
+  const thSticky = (left: number): React.CSSProperties => ({
+    ...thStyle,
+    position: 'sticky',
+    left,
+    zIndex: 3,
+    backgroundColor: 'rgba(230,230,230,1)',
+  });
+  const tdStyle: React.CSSProperties = {
+    padding: '4px 10px',
+    borderBottom: '1px solid rgba(128,128,128,0.15)',
+    fontSize: '12px',
+    whiteSpace: 'nowrap',
+  };
+  const tdSticky = (left: number, bg: string): React.CSSProperties => ({
+    ...tdStyle,
+    position: 'sticky',
+    left,
+    zIndex: 2,
+    backgroundColor: bg,
+  });
+  const tdTime: React.CSSProperties = {
+    ...tdStyle,
+    textAlign: 'center',
+    fontVariantNumeric: 'tabular-nums',
+  };
+  const subtotalRowStyle: React.CSSProperties = {
+    backgroundColor: '#E0E0E0',
+    fontWeight: 600,
+  };
+  const totalRowStyle: React.CSSProperties = {
+    backgroundColor: '#D0D0D0',
+    fontWeight: 700,
+    position: 'sticky' as const,
+    bottom: 0,
+    zIndex: 3,
+  };
+  const worklogRowStyle: React.CSSProperties = {
+    fontSize: '11px',
+    color: '#777',
+    backgroundColor: '#F8F8F8',
+    fontStyle: 'italic',
+  };
+
+  const navBtnStyle: React.CSSProperties = {
+    ...btnStyle,
+    padding: '4px 10px',
+    fontSize: '14px',
+    minWidth: '32px',
+  };
+
+  const BG_SUBTOTAL = '#DCDCDC';
+  const BG_TOTAL = '#D0D0D0';
+  const BG_NORMAL = '#E6E6E6';
+  const BG_WORKLOG = '#F0F0F0';
 
   return (
-    <div style={{ padding: '20px' }}>
-      <Table columns={columns} data={tableData} />
+    <div style={{ padding: '16px' }}>
+      {/* Date navigation + Queue filter */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px', flexWrap: 'wrap' }}>
+        <button onClick={handlePrev} style={navBtnStyle} title="Предыдущий период">←</button>
+        <span style={{ fontSize: '14px', fontWeight: 600, minWidth: '160px', textAlign: 'center' }}>
+          {periodLabel(dateFrom, dateTo)}
+        </span>
+        <button onClick={handleNext} style={navBtnStyle} title="Следующий период">→</button>
+        <span style={{ margin: '0 4px', opacity: 0.5 }}>|</span>
+        <label style={{ fontSize: '12px', opacity: 0.7 }}>С:</label>
+        <input
+          type="date"
+          value={dateFrom}
+          onChange={(e) => setDateFrom(e.target.value)}
+          style={{ ...inputStyle, width: 'auto', fontSize: '12px', padding: '4px 8px' }}
+        />
+        <label style={{ fontSize: '12px', opacity: 0.7 }}>По:</label>
+        <input
+          type="date"
+          value={dateTo}
+          onChange={(e) => setDateTo(e.target.value)}
+          style={{ ...inputStyle, width: 'auto', fontSize: '12px', padding: '4px 8px' }}
+        />
+        <span style={{ margin: '0 4px', opacity: 0.5 }}>|</span>
+        {/* Queue filter */}
+        <div style={{ position: 'relative' }}>
+          <button
+            onClick={() => setQueueFilterOpen(!queueFilterOpen)}
+            style={{ ...btnStyle, padding: '4px 10px', fontSize: '12px' }}
+          >
+            Очереди {selectedQueues.size > 0 ? `(${selectedQueues.size})` : '(все)'} ▾
+          </button>
+          {queueFilterOpen && (
+            <>
+              <div
+                style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 50 }}
+                onClick={() => setQueueFilterOpen(false)}
+              />
+              <div style={{
+                position: 'absolute', top: '100%', left: 0, zIndex: 51,
+                background: '#fff', border: '1px solid rgba(0,0,0,0.2)', borderRadius: '6px',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.15)', maxHeight: '300px', overflowY: 'auto',
+                minWidth: '200px',
+              }}>
+                <div style={{ display: 'flex', gap: '8px', padding: '8px', borderBottom: '1px solid rgba(0,0,0,0.1)' }}>
+                  <button
+                    onClick={() => setSelectedQueues(new Set())}
+                    style={{ ...btnStyle, padding: '2px 8px', fontSize: '11px' }}
+                  >Все</button>
+                  <button
+                    onClick={() => {
+                      const next = new Set<string>();
+                      for (const q of allQueues) { if (!selectedQueues.has(q)) next.add(q); }
+                      setSelectedQueues(next);
+                    }}
+                    style={{ ...btnStyle, padding: '2px 8px', fontSize: '11px' }}
+                  >Инверсия</button>
+                </div>
+                {allQueues.map((q) => (
+                  <label key={q} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '4px 12px', cursor: 'pointer', fontSize: '12px' }}>
+                    <input
+                      type="checkbox"
+                      checked={selectedQueues.has(q)}
+                      onChange={(e) => {
+                        const next = new Set(selectedQueues);
+                        if (e.target.checked) next.add(q); else next.delete(q);
+                        setSelectedQueues(next);
+                      }}
+                    />
+                    {q}
+                  </label>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* View mode switcher */}
+      <div style={{ display: 'flex', gap: '4px', marginBottom: '8px' }}>
+        <button
+          onClick={() => setViewMode('table')}
+          style={{
+            ...btnStyle,
+            padding: '4px 12px',
+            fontSize: '12px',
+            fontWeight: viewMode === 'table' ? 600 : 400,
+            backgroundColor: viewMode === 'table' ? 'rgba(200,200,200,0.6)' : 'transparent',
+          }}
+        >
+          Таблица
+        </button>
+        <button
+          onClick={() => setViewMode('list')}
+          style={{
+            ...btnStyle,
+            padding: '4px 12px',
+            fontSize: '12px',
+            fontWeight: viewMode === 'list' ? 600 : 400,
+            backgroundColor: viewMode === 'list' ? 'rgba(200,200,200,0.6)' : 'transparent',
+          }}
+        >
+          Список
+        </button>
+      </div>
+
+      {/* Calendar table */}
+      {viewMode === 'table' && (
+      <div style={{ overflowX: 'auto', overflowY: 'auto', maxHeight: 'calc(100vh - 160px)' }}>
+        <table style={{ borderCollapse: 'collapse', width: '100%' }}>
+          <thead>
+            <tr>
+              <th style={thSticky(0)}>Очередь</th>
+              <th style={thSticky(COL_Q)}>Задача</th>
+              <th style={{ ...thSticky(COL_Q + COL_K), minWidth: COL_N + 'px', maxWidth: COL_N + 'px', overflow: 'hidden', textOverflow: 'ellipsis' }}>Название</th>
+              <th style={{ ...thSticky(LEFT_T), textAlign: 'center' }}>Итого</th>
+              {dates.map((d) => (
+                <th key={d} style={{ ...thStyle, textAlign: 'center', color: isWeekend(d) ? 'rgba(255,100,100,0.7)' : 'inherit' }}>
+                  {formatDateHeader(d)}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {queues.map((q) => {
+              const issueKeys = Object.keys(queueMap[q]).sort();
+              return (
+                <React.Fragment key={q}>
+                  {/* Subtotal row for queue */}
+                  <tr style={subtotalRowStyle}>
+                    <td style={tdSticky(0, BG_SUBTOTAL)}><strong>{q}</strong></td>
+                    <td style={tdSticky(COL_Q, BG_SUBTOTAL)}></td>
+                    <td style={{ ...tdSticky(COL_Q + COL_K, BG_SUBTOTAL), fontStyle: 'italic', opacity: 0.6 }}>Подытог:</td>
+                    <td style={{ ...tdSticky(LEFT_T, BG_SUBTOTAL), textAlign: 'center', fontVariantNumeric: 'tabular-nums' }}>
+                      <strong>{formatDuration(queueTotal(q))}</strong>
+                    </td>
+                    {dates.map((d) => {
+                      const val = queueDayTotal(q, d);
+                      return (
+                        <td key={d} style={{ ...tdTime, backgroundColor: '#E0E0E0', fontWeight: 600, color: val === 0 ? 'rgba(128,128,128,0.3)' : 'inherit' }}>
+                          {val > 0 ? formatDuration(val) : '—'}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                  {/* Task rows + worklog sub-rows */}
+                  {issueKeys.map((ik) => {
+                    const issue = queueMap[q][ik];
+                    let issueTotal = 0;
+                    for (const d of dates) issueTotal += issue.byDay[d] || 0;
+                    // Group worklogs by day
+                    const worklogsByDay: Record<string, typeof issue.worklogs> = {};
+                    for (const wl of issue.worklogs) {
+                      if (!worklogsByDay[wl.day]) worklogsByDay[wl.day] = [];
+                      worklogsByDay[wl.day].push(wl);
+                    }
+                    return (
+                      <React.Fragment key={ik}>
+                        <tr key={ik}>
+                          <td style={{ ...tdSticky(0, BG_NORMAL), opacity: 0.3 }}></td>
+                          <td style={tdSticky(COL_Q, BG_NORMAL)}>{ik}</td>
+                          <td style={{ ...tdSticky(COL_Q + COL_K, BG_NORMAL), maxWidth: COL_N + 'px', overflow: 'hidden', textOverflow: 'ellipsis' }} title={issue.summary}>{issue.summary}</td>
+                          <td style={{ ...tdSticky(LEFT_T, BG_NORMAL), textAlign: 'center', fontVariantNumeric: 'tabular-nums', fontWeight: 500 }}>
+                            {issueTotal > 0 ? formatDuration(issueTotal) : '—'}
+                          </td>
+                          {dates.map((d) => {
+                            const val = issue.byDay[d] || 0;
+                            return (
+                              <td key={d} style={{ ...tdTime, color: val === 0 ? 'rgba(128,128,128,0.25)' : 'inherit', backgroundColor: isWeekend(d) ? '#F0F0F0' : 'transparent' }}>
+                                {val > 0 ? formatDuration(val) : '—'}
+                              </td>
+                            );
+                          })}
+                        </tr>
+                        {/* Worklog sub-rows */}
+                        {dates.map((d) => {
+                          const dayWorklogs = worklogsByDay[d];
+                          if (!dayWorklogs || dayWorklogs.length === 0) return null;
+                          return dayWorklogs.map((wl, wi) => (
+                            <tr key={ik + '_wl_' + d + '_' + wi} style={worklogRowStyle}>
+                              <td style={tdSticky(0, BG_WORKLOG)}></td>
+                              <td style={tdSticky(COL_Q, BG_WORKLOG)}></td>
+                              <td
+                                style={{ ...tdSticky(COL_Q + COL_K, BG_WORKLOG), maxWidth: COL_N + 'px', overflow: 'hidden', textOverflow: 'ellipsis' }}
+                                title={wl.comment || '(без комментария)'}
+                              >
+                                {wl.comment || '(без комментария)'}
+                              </td>
+                              <td style={tdSticky(LEFT_T, BG_WORKLOG)}></td>
+                              {dates.map((dd) => (
+                                <td key={dd} style={{ ...tdTime, ...worklogRowStyle, backgroundColor: isWeekend(dd) ? 'rgba(128,128,128,0.05)' : 'transparent' }}>
+                                  {dd === d ? formatDuration(wl.durationMs) : ''}
+                                </td>
+                              ))}
+                            </tr>
+                          ));
+                        })}
+                      </React.Fragment>
+                    );
+                  })}
+                </React.Fragment>
+              );
+            })}
+          </tbody>
+          <tfoot>
+            <tr style={totalRowStyle}>
+              <td style={{ ...tdSticky(0, BG_TOTAL), position: 'sticky' as const, bottom: 0, zIndex: 4 }}>
+                <strong>Итого:</strong>
+              </td>
+              <td style={{ ...tdSticky(COL_Q, BG_TOTAL), position: 'sticky' as const, bottom: 0, zIndex: 4 }}></td>
+              <td style={{ ...tdSticky(COL_Q + COL_K, BG_TOTAL), position: 'sticky' as const, bottom: 0, zIndex: 4 }}></td>
+              <td style={{ ...tdSticky(LEFT_T, BG_TOTAL), position: 'sticky' as const, bottom: 0, zIndex: 4, textAlign: 'center', fontVariantNumeric: 'tabular-nums' }}>
+                <strong>{formatDuration(grandTotal)}</strong>
+              </td>
+              {dates.map((d) => (
+                <td key={d} style={{ ...tdTime, backgroundColor: '#D0D0D0', position: 'sticky' as const, bottom: 0, zIndex: 3, fontWeight: 700 }}>
+                  {grandDayTotals[d] > 0 ? formatDuration(grandDayTotals[d]) : '—'}
+                </td>
+              ))}
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+      )}
+
+      {/* List view - full comments */}
+      {viewMode === 'list' && (
+      <div style={{ overflowY: 'auto', maxHeight: 'calc(100vh - 160px)' }}>
+        <table style={{ borderCollapse: 'collapse', width: '100%', tableLayout: 'fixed' }}>
+          <thead>
+            <tr>
+              <th style={{ ...thSticky(0), width: '80px' }}>Очередь</th>
+              <th style={{ ...thSticky(COL_Q), width: '80px' }}>Задача</th>
+              <th style={{ ...thSticky(COL_Q + COL_K), width: '250px' }}>Название</th>
+              <th style={{ ...thSticky(LEFT_T), width: '70px', textAlign: 'center' }}>Итого</th>
+              <th style={{ ...thStyle, width: '100px' }}>Дата</th>
+              <th style={{ ...thStyle, width: '60px', textAlign: 'center' }}>Время</th>
+              <th style={{ ...thStyle }}>Комментарий</th>
+            </tr>
+          </thead>
+          <tbody>
+            {queues.map((q) => {
+              const issueKeys = Object.keys(queueMap[q]).sort();
+              return (
+                <React.Fragment key={q}>
+                  <tr style={subtotalRowStyle}>
+                    <td style={tdSticky(0, BG_SUBTOTAL)} colSpan={4}>
+                      <strong>{q}</strong> — {formatDuration(queueTotal(q))}
+                    </td>
+                    <td style={{ backgroundColor: '#E0E0E0', fontWeight: 600 }} colSpan={3}></td>
+                  </tr>
+                  {issueKeys.map((ik) => {
+                    const issue = queueMap[q][ik];
+                    let issueTotal = 0;
+                    for (const d of dates) issueTotal += issue.byDay[d] || 0;
+                    return (
+                      <React.Fragment key={ik}>
+                        <tr>
+                          <td style={{ ...tdSticky(0, BG_NORMAL), opacity: 0.3 }}></td>
+                          <td style={tdSticky(COL_Q, BG_NORMAL)}>{ik}</td>
+                          <td style={{ ...tdSticky(COL_Q + COL_K, BG_NORMAL), overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={issue.summary}>{issue.summary}</td>
+                          <td style={{ ...tdSticky(LEFT_T, BG_NORMAL), textAlign: 'center', fontVariantNumeric: 'tabular-nums', fontWeight: 500 }}>
+                            {issueTotal > 0 ? formatDuration(issueTotal) : '—'}
+                          </td>
+                          <td style={{ ...tdStyle, color: '#999', fontSize: '11px' }} colSpan={3}>{issue.worklogs.length} ворклог(ов)</td>
+                        </tr>
+                        {issue.worklogs.map((wl, wi) => (
+                          <tr key={ik + '_wl_' + wi} style={worklogRowStyle}>
+                            <td style={tdSticky(0, BG_WORKLOG)}></td>
+                            <td style={tdSticky(COL_Q, BG_WORKLOG)}></td>
+                            <td style={{ ...tdSticky(COL_Q + COL_K, BG_WORKLOG), overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={wl.comment || '(без комментария)'}>
+                              {wl.comment || '(без комментария)'}
+                            </td>
+                            <td style={tdSticky(LEFT_T, BG_WORKLOG)}></td>
+                            <td style={{ ...tdStyle, fontSize: '11px', whiteSpace: 'nowrap' }}>
+                              {formatDateHeader(wl.day)}
+                            </td>
+                            <td style={{ ...tdTime, fontSize: '11px' }}>
+                              {formatDuration(wl.durationMs)}
+                            </td>
+                            <td style={{ ...tdStyle, fontSize: '11px', whiteSpace: 'pre-wrap', wordBreak: 'break-word', lineHeight: '1.4' }}>
+                              {wl.comment || '(без комментария)'}
+                            </td>
+                          </tr>
+                        ))}
+                      </React.Fragment>
+                    );
+                  })}
+                </React.Fragment>
+              );
+            })}
+            <tr style={totalRowStyle}>
+              <td style={{ ...tdSticky(0, BG_TOTAL), position: 'sticky' as const, bottom: 0, zIndex: 4 }} colSpan={3}>
+                <strong>Итого:</strong>
+              </td>
+              <td style={{ ...tdSticky(LEFT_T, BG_TOTAL), position: 'sticky' as const, bottom: 0, zIndex: 4, textAlign: 'center', fontVariantNumeric: 'tabular-nums' }}>
+                <strong>{formatDuration(grandTotal)}</strong>
+              </td>
+              <td style={{ backgroundColor: '#D0D0D0', position: 'sticky' as const, bottom: 0, zIndex: 3, fontWeight: 700 }} colSpan={3}></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      )}
     </div>
   );
 }
