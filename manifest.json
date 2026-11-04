@@ -1,77 +1,74 @@
 {
-    "$schema": "./manifest.schema.json",
-    "manifest_version": 1,
-    "version": "1.0.0",
-    "slug": "runel-track",
-    "name": {
-        "ru": "ВоркТаймер",
-        "en": "WorkTimer"
-    },
-    "description": {
-        "ru": "Учёт времени в карточке задачи с автоматической записью в ворклоги",
-        "en": "Time tracker in issue card with automatic logging to worklogs"
-    },
-    "categories": [
-        "productivity"
-    ],
-    "support": [
+  "$schema": "./manifest.schema.json",
+  "manifest_version": 1,
+  "version": "1.0.2",
+  "slug": "runel-track",
+  "name": {
+    "ru": "ВоркТаймер",
+    "en": "WorkTimer"
+  },
+  "description": {
+    "ru": "Учёт времени в карточке задачи с автоматической записью в ворклоги",
+    "en": "Time tracker in issue card with automatic logging to worklogs"
+  },
+  "categories": [
+    "productivity"
+  ],
+  "support": [
+    {
+      "type": "email",
+      "value": "mulenur@yandex.ru"
+    }
+  ],
+  "license": "MIT",
+  "slots": {
+    "tracker": {
+      "issue.block": [
         {
-            "type": "email",
-            "value": "mulenur@yandex.ru"
+          "entrypoint": "index.html",
+          "title": {
+            "ru": "Таймер",
+            "en": "Timer"
+          },
+          "contextLevel": "full"
         }
-    ],
-    "license": "MIT",
-    "slots": {
-        "tracker": {
-            "issue.block": [
-                {
-                    "entrypoint": "index.html",
-                    "title": {
-                        "ru": "Таймер",
-                        "en": "Timer"
-                    },
-                    "contextLevel": "full"
-                }
-            ],
-            "drawer.issue.block": [
-                {
-                    "entrypoint": "index.html",
-                    "title": {
-                        "ru": "Таймер",
-                        "en": "Timer"
-                    },
-                    "contextLevel": "full"
-                }
-            ],
-            "navigation": [
-                {
-                    "entrypoint": "index.html",
-                    "title": {
-                        "ru": "Отчёты по времени",
-                        "en": "Time Reports"
-                    },
-                    "contextLevel": "basic"
-                }
-            ]
+      ],
+      "drawer.issue.block": [
+        {
+          "entrypoint": "index.html",
+          "title": {
+            "ru": "Таймер",
+            "en": "Timer"
+          },
+          "contextLevel": "full"
         }
-    },
-    "permissions": {
-        "data": [
-            "tracker:issues:read",
-            "tracker:issues:write",
-            "tracker:resources:read",
-            "tracker:resources:write",
-            "tracker:worklog:read",
-            "tracker:worklog:write"
-        ],
-        "ui": [
-            "toaster",
-            "confirm"
-        ]
-    },
-    "docsUrl": "/docs/index.html",
-    "supported_services": [
-        "tracker"
+      ],
+      "navigation": [
+        {
+          "entrypoint": "index.html",
+          "title": {
+            "ru": "Отчёты по времени",
+            "en": "Time Reports"
+          },
+          "contextLevel": "basic"
+        }
+      ]
+    }
+  },
+  "permissions": {
+    "data": [
+      "tracker:issues:read",
+      "tracker:issues:write",
+      "tracker:worklog:read",
+      "tracker:worklog:write"
     ],
-    "id": "662d42aa-b6d9-432b-9b03-ba52f9928e23"
+    "ui": [
+      "toaster"
+    ]
+  },
+  "docsUrl": "/docs/index.html",
+  "supported_services": [
+    "tracker"
+  ],
+  "id": "662d42aa-b6d9-432b-9b03-ba52f9928e23"
 }

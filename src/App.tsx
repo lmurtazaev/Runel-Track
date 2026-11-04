@@ -3,9 +3,13 @@ import {
   useTrackerPluginContext,
   trackerApi,
   storageApi,
+  hostApi,
   uiApi,
 } from '@weavix/tracker-plugin-sdk-react';
 import { Button } from '@gravity-ui/uikit';
+
+// --- Модульный лог (проверка загрузки) ---
+console.log('[runel-track] Module loaded at', new Date().toISOString(), '| location:', window.location.href);
 
 // --- Глобальные стили ---
 const globalStyles = `
@@ -33,9 +37,8 @@ type TimerState = {
 };
 
 // --- Константы ---
-const BG_LIGHT = '#E6E6E6';
+const BG_LIGHT = '#F4F4F6';
 const BG_DARK = '#687381';
-const USER_ID_KEY = 'runel_user_id';
 const TEXT_LIGHT = '#494949';
 const TEXT_DARK = '#ECECEC';
 
@@ -62,6 +65,14 @@ const btnStyle: React.CSSProperties = {
   fontSize: '13px',
   backgroundColor: 'rgba(255,255,255,0.25)',
   color: 'inherit',
+};
+
+// Отдельный стиль для основных кнопок управления таймером.
+const timerBtnStyle: React.CSSProperties = {
+  ...btnStyle,
+  backgroundColor: '#FFFFFF',
+  border: '1px solid #626262',
+  color: '#000000',
 };
 
 const inputStyle: React.CSSProperties = {
@@ -161,23 +172,6 @@ function parseDurationToMs(w: any): number {
   return 0;
 }
 
-// --- User ID helpers ---
-function saveUserId(id: string) {
-  try { localStorage.setItem(USER_ID_KEY, id); } catch (e) { console.warn('localStorage save:', e); }
-  try {
-    storageApi.orgShared.patch({ bucket: sanitizeBucket(USER_ID_KEY), data: { userId: id } });
-  } catch (e) { console.warn('storageApi save:', e); }
-}
-
-async function loadUserId(): Promise<string | null> {
-  try { const v = localStorage.getItem(USER_ID_KEY); if (v) return v; } catch (e) { console.warn('localStorage get:', e); }
-  try {
-    const record = await storageApi.orgShared.get(sanitizeBucket(USER_ID_KEY));
-    if (record && record.data && (record.data as any).userId) return (record.data as any).userId;
-  } catch (e) { console.warn('storageApi get:', e); }
-  return null;
-}
-
 // --- Storage хук ---
 function useTimerStorage(bucketName: string) {
   const bucket = sanitizeBucket(bucketName);
@@ -205,7 +199,9 @@ function useTimerStorage(bucketName: string) {
 
 // --- App ---
 export default function App() {
-  const { slot, slotContext, theme } = useTrackerPluginContext();
+  const ctx = useTrackerPluginContext();
+  console.log('[runel-track] App() render | slot =', ctx.slot, '| slotContext =', ctx.slotContext);
+  const { slot, slotContext, theme } = ctx;
   if (slot === 'navigation') return <NavigationPage theme={theme} />;
   if (slot === 'issue.block' || slot === 'drawer.issue.block') {
     const compact = slot === 'drawer.issue.block';
@@ -230,6 +226,16 @@ function TimerWidget({ issueKey, compact = false, theme }: {
   const bucketName = 'issue_' + issueKey;
   const { loadState, saveState } = useTimerStorage(bucketName);
   const bgColor = getBgColor(theme);
+  
+  useEffect(() => {
+  document.body.style.backgroundColor = bgColor;
+  document.documentElement.style.backgroundColor = bgColor;
+
+  return () => {
+    document.body.style.backgroundColor = '';
+    document.documentElement.style.backgroundColor = '';
+  };
+}, [bgColor]);
 
   useEffect(() => {
     (async () => {
@@ -286,8 +292,6 @@ function TimerWidget({ issueKey, compact = false, theme }: {
         bodyParams: { start: startISO, duration, comment: comment || undefined },
       });
       console.log('Worklog response:', res);
-      const authorId = (res as any)?.data?.createdBy?.id;
-      if (authorId) { console.log('Got author ID:', authorId); saveUserId(String(authorId)); }
       setState({ status: 'idle', startedAt: null, accumulatedMs: 0, totalMs: state.totalMs });
       saveState({ status: 'idle', startedAt: null, accumulatedMs: 0, totalMs: state.totalMs });
       setShowForm(false);
@@ -312,10 +316,10 @@ function TimerWidget({ issueKey, compact = false, theme }: {
       <div className="no-scrollbar" style={{ padding: '8px 12px', backgroundColor: bgColor, color: getTextColor(theme), overflow: 'hidden', width: '100%', boxSizing: 'border-box' }}>
         <div className="timer-font" style={{ fontSize: '22px', fontWeight: 600, textAlign: 'center', marginBottom: '8px' }}>{formatTime(displayMs)}</div>
         <div style={{ display: 'flex', gap: '6px', justifyContent: 'center', flexWrap: 'wrap' }}>
-          {state.status === 'idle' && <button onClick={handleStart} style={btnStyle}>▶ Старт</button>}
-          {isRunning && <button onClick={handlePause} style={btnStyle}>⏸ Пауза</button>}
-          {isPaused && <button onClick={handleResume} style={btnStyle}>▶ Продолжить</button>}
-          {(isRunning || isPaused) && <button onClick={handleStop} style={btnStyle}>⏹ Стоп</button>}
+          {state.status === 'idle' && <button onClick={handleStart} style={timerBtnStyle}>▶ Старт</button>}
+          {isRunning && <button onClick={handlePause} style={timerBtnStyle}>⏸ Пауза</button>}
+          {isPaused && <button onClick={handleResume} style={timerBtnStyle}>▶ Продолжить</button>}
+          {(isRunning || isPaused) && <button onClick={handleStop} style={timerBtnStyle}>⏹ Стоп</button>}
         </div>
         {showForm && (
           <div style={{ marginTop: '12px', padding: '12px', background: 'rgba(255,255,255,0.15)', borderRadius: '8px' }}>
@@ -337,10 +341,10 @@ function TimerWidget({ issueKey, compact = false, theme }: {
     <div className="no-scrollbar" style={{ padding: '16px', backgroundColor: bgColor, color: getTextColor(theme), overflow: 'hidden', width: '100%', boxSizing: 'border-box' }}>
       <div className="timer-font" style={{ fontSize: '28px', fontWeight: 600 }}>{formatTime(displayMs)}</div>
       <div style={{ marginTop: '12px', display: 'flex', gap: '8px' }}>
-        {state.status === 'idle' && <button onClick={handleStart} style={btnStyle}>▶ Старт</button>}
-        {isRunning && <button onClick={handlePause} style={btnStyle}>⏸ Пауза</button>}
-        {isPaused && <button onClick={handleResume} style={btnStyle}>▶ Продолжить</button>}
-        {(isRunning || isPaused) && <button onClick={handleStop} style={btnStyle}>⏹ Стоп</button>}
+        {state.status === 'idle' && <button onClick={handleStart} style={timerBtnStyle}>▶ Старт</button>}
+        {isRunning && <button onClick={handlePause} style={timerBtnStyle}>⏸ Пауза</button>}
+        {isPaused && <button onClick={handleResume} style={timerBtnStyle}>▶ Продолжить</button>}
+        {(isRunning || isPaused) && <button onClick={handleStop} style={timerBtnStyle}>⏹ Стоп</button>}
       </div>
       {showForm && (
         <div style={{ marginTop: '20px', padding: '16px', background: 'rgba(255,255,255,0.15)', borderRadius: '8px' }}>
@@ -368,7 +372,7 @@ function NavigationPage({ theme }: { theme?: string }) {
         <button onClick={() => setView('timer')} style={{ padding: '10px 20px', border: 'none', borderBottom: view === 'timer' ? '2px solid #333' : '2px solid transparent', backgroundColor: 'transparent', cursor: 'pointer', fontSize: '14px', fontWeight: view === 'timer' ? 600 : 400, color: 'inherit' }}>⏱ Таймер</button>
         <button onClick={() => setView('reports')} style={{ padding: '10px 20px', border: 'none', borderBottom: view === 'reports' ? '2px solid #333' : '2px solid transparent', backgroundColor: 'transparent', cursor: 'pointer', fontSize: '14px', fontWeight: view === 'reports' ? 600 : 400, color: 'inherit' }}>📋 Отчёты</button>
       </div>
-      {view === 'timer' ? <GlobalTimer /> : <ReportsView />}
+      {view === 'timer' ? <GlobalTimer /> : <ReportsView theme={theme} />}
     </div>
   );
 }
@@ -447,8 +451,6 @@ function GlobalTimer() {
         bodyParams: { start: startISO, duration, comment: comment || undefined },
       });
       console.log('Worklog response:', res);
-      const authorId = (res as any)?.data?.createdBy?.id;
-      if (authorId) { console.log('Got author ID:', authorId); saveUserId(String(authorId)); }
       setState({ status: 'idle', startedAt: null, accumulatedMs: 0, totalMs: state.totalMs });
       saveState({ status: 'idle', startedAt: null, accumulatedMs: 0, totalMs: state.totalMs }, taskKey);
       setShowForm(false);
@@ -484,7 +486,7 @@ function GlobalTimer() {
       </div>
       {state.status === 'idle' && displayMs === 0 && !showForm && (
         <div style={{ marginTop: '24px', fontSize: '13px', opacity: 0.6, textAlign: 'center' }}>
-          Введите ключ задачи и нажмите «Старт».<br />После остановки откроется панель для комментария.
+          Введите ключ задачи и нажмите «Старт».<br />Таймер можно приостановить, нажав на кнопку «Пауза», а затем возобновить по кнопке «Продолжить».<br />После остановки по кнопке «Стоп» откроется панель для ввода комментария.
         </div>
       )}
       {showForm && (
@@ -571,7 +573,7 @@ function periodLabel(from: string, to: string): string {
 }
 
 // --- ReportsView ---
-function ReportsView() {
+function ReportsView({ theme }: { theme?: string }) {
   const [worklogs, setWorklogs] = useState<any[]>([]);
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
@@ -579,9 +581,9 @@ function ReportsView() {
   const [debugInfo, setDebugInfo] = useState('');
   const [selectedQueues, setSelectedQueues] = useState<Set<string>>(new Set());
   const [queueFilterOpen, setQueueFilterOpen] = useState(false);
-  const { slotContext } = useTrackerPluginContext();
   const fetchedRef = useRef(false);
   const [viewMode, setViewMode] = useState<'table' | 'list'>('table');
+  const [showWorklogs, setShowWorklogs] = useState(true);
 
   // Init default date range = current month
   useEffect(() => {
@@ -598,12 +600,8 @@ function ReportsView() {
     console.log('[ReportsView] Starting data fetch...');
     (async () => {
       try {
-        let userId: string | null = localStorage.getItem(USER_ID_KEY);
-        if (!userId) userId = await loadUserId();
-        if (!userId) {
-          const u = (slotContext as any)?.user;
-          if (u && u.id) userId = String(u.id);
-        }
+        // Получаем ID текущего пользователя напрямую из SDK хоста.
+        const userId = await hostApi.getUserId();
         if (!userId) {
           setDebugInfo('User ID не найден. Отправьте время хотя бы один раз — ID сохранится автоматически.');
           setLoading(false);
@@ -773,9 +771,40 @@ function ReportsView() {
   const COL_N = 250;
   const LEFT_T = COL_Q + COL_K + COL_N;
 
+  const isDark = theme?.startsWith('dark') ?? false;
+  
+  const tableColors = isDark
+    ? {
+		header: '#343B46',
+		subtotal: '#3B4653',
+		total: '#303944',
+		normal: '#424D5B',
+		worklog: '#38424F',
+		weekend: '#3A4552',
+		text: '#EFEFEF',
+		muted: 'rgba(255,255,255,0.6)',
+		border: 'rgba(130,130,130,1)',
+	  }
+	: {
+		header: '#E6E6E6',
+		subtotal: '#DCDCDC',
+		total: '#D0D0D0',
+		normal: '#E6E6E6',
+		worklog: '#F0F0F0',
+		weekend: '#F0F0F0',
+		text: '#2C2C2C',
+		muted: 'rgba(0,0,0,0.6)',
+		border: 'rgba(190,190,190,0.5)',
+	  };
+   
+  const BG_SUBTOTAL = tableColors.subtotal;
+  const BG_TOTAL = tableColors.total;
+  const BG_NORMAL = tableColors.normal;
+  const BG_WORKLOG = tableColors.worklog;
+  
   const thStyle: React.CSSProperties = {
     padding: '6px 10px',
-    borderBottom: '2px solid rgba(128,128,128,0.4)',
+    borderBottom: `2px solid ${tableColors.border}`,
     textAlign: 'left',
     fontSize: '12px',
     fontWeight: 600,
@@ -783,27 +812,30 @@ function ReportsView() {
     position: 'sticky',
     top: 0,
     zIndex: 1,
-    backgroundColor: 'rgba(230,230,230,1)',
+    backgroundColor: tableColors.header,
+    color: tableColors.text,
   };
   const thSticky = (left: number): React.CSSProperties => ({
     ...thStyle,
     position: 'sticky',
     left,
     zIndex: 3,
-    backgroundColor: 'rgba(230,230,230,1)',
+    backgroundColor: tableColors.header,
+    color: tableColors.text,
   });
   const tdStyle: React.CSSProperties = {
     padding: '4px 10px',
-    borderBottom: '1px solid rgba(128,128,128,0.15)',
+    borderBottom: `1px solid ${tableColors.border}`,
     fontSize: '12px',
     whiteSpace: 'nowrap',
+    color: tableColors.text,
   };
-  const tdSticky = (left: number, bg: string): React.CSSProperties => ({
+  const tdSticky = (left: number, _bg: string): React.CSSProperties => ({
     ...tdStyle,
     position: 'sticky',
     left,
     zIndex: 2,
-    backgroundColor: bg,
+    backgroundColor: tableColors.header,
   });
   const tdTime: React.CSSProperties = {
     ...tdStyle,
@@ -811,21 +843,26 @@ function ReportsView() {
     fontVariantNumeric: 'tabular-nums',
   };
   const subtotalRowStyle: React.CSSProperties = {
-    backgroundColor: '#E0E0E0',
+    backgroundColor: BG_SUBTOTAL,
+    color: tableColors.text,
     fontWeight: 600,
   };
+
   const totalRowStyle: React.CSSProperties = {
-    backgroundColor: '#D0D0D0',
+    backgroundColor: BG_TOTAL,
+    color: tableColors.text,
     fontWeight: 700,
     position: 'sticky' as const,
     bottom: 0,
     zIndex: 3,
   };
+
   const worklogRowStyle: React.CSSProperties = {
     fontSize: '11px',
-    color: '#777',
-    backgroundColor: '#F8F8F8',
-    fontStyle: 'italic',
+    fontWeight: 400,
+    color: tableColors.muted,
+    backgroundColor: BG_WORKLOG,
+    fontStyle: 'normal',
   };
 
   const navBtnStyle: React.CSSProperties = {
@@ -834,11 +871,6 @@ function ReportsView() {
     fontSize: '14px',
     minWidth: '32px',
   };
-
-  const BG_SUBTOTAL = '#DCDCDC';
-  const BG_TOTAL = '#D0D0D0';
-  const BG_NORMAL = '#E6E6E6';
-  const BG_WORKLOG = '#F0F0F0';
 
   return (
     <div style={{ padding: '16px' }}>
@@ -881,7 +913,10 @@ function ReportsView() {
               />
               <div style={{
                 position: 'absolute', top: '100%', left: 0, zIndex: 51,
-                background: '#fff', border: '1px solid rgba(0,0,0,0.2)', borderRadius: '6px',
+                background: isDark ? '#343B46' : '#FFFFFF',
+                color: tableColors.text,
+                border: `1px solid ${tableColors.border}`,
+                borderRadius: '6px',
                 boxShadow: '0 4px 12px rgba(0,0,0,0.15)', maxHeight: '300px', overflowY: 'auto',
                 minWidth: '200px',
               }}>
@@ -920,7 +955,7 @@ function ReportsView() {
       </div>
 
       {/* View mode switcher */}
-      <div style={{ display: 'flex', gap: '4px', marginBottom: '8px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
         <button
           onClick={() => setViewMode('table')}
           style={{
@@ -945,6 +980,26 @@ function ReportsView() {
         >
           Список
         </button>
+        {viewMode === 'table' && (
+		  <label
+		    style={{
+		      display: 'flex',
+		      alignItems: 'center',
+		      gap: '5px',
+		      marginLeft: '12px',
+		      fontSize: '12px',
+		      cursor: 'pointer',
+		      userSelect: 'none',
+		    }}
+		  >
+		    <input
+		      type="checkbox"
+		      checked={showWorklogs}
+		      onChange={(e) => setShowWorklogs(e.target.checked)}
+		    />
+		    Ворклог
+		  </label>
+		)}
       </div>
 
       {/* Calendar table */}
@@ -973,14 +1028,14 @@ function ReportsView() {
                   <tr style={subtotalRowStyle}>
                     <td style={tdSticky(0, BG_SUBTOTAL)}><strong>{q}</strong></td>
                     <td style={tdSticky(COL_Q, BG_SUBTOTAL)}></td>
-                    <td style={{ ...tdSticky(COL_Q + COL_K, BG_SUBTOTAL), fontStyle: 'italic', opacity: 0.6 }}>Подытог:</td>
+                    <td style={{ ...tdSticky(COL_Q + COL_K, BG_SUBTOTAL), fontStyle: 'normal', opacity: 1 }}>Подытог:</td>
                     <td style={{ ...tdSticky(LEFT_T, BG_SUBTOTAL), textAlign: 'center', fontVariantNumeric: 'tabular-nums' }}>
                       <strong>{formatDuration(queueTotal(q))}</strong>
                     </td>
                     {dates.map((d) => {
                       const val = queueDayTotal(q, d);
                       return (
-                        <td key={d} style={{ ...tdTime, backgroundColor: '#E0E0E0', fontWeight: 600, color: val === 0 ? 'rgba(128,128,128,0.3)' : 'inherit' }}>
+                        <td key={d} style={{ ...tdTime, backgroundColor: tableColors.subtotal, fontWeight: 600, color: val === 0 ? 'rgba(128,128,128,0.3)' : 'inherit' }}>
                           {val > 0 ? formatDuration(val) : '—'}
                         </td>
                       );
@@ -1000,33 +1055,61 @@ function ReportsView() {
                     return (
                       <React.Fragment key={ik}>
                         <tr key={ik}>
-                          <td style={{ ...tdSticky(0, BG_NORMAL), opacity: 0.3 }}></td>
-                          <td style={tdSticky(COL_Q, BG_NORMAL)}>{ik}</td>
-                          <td style={{ ...tdSticky(COL_Q + COL_K, BG_NORMAL), maxWidth: COL_N + 'px', overflow: 'hidden', textOverflow: 'ellipsis' }} title={issue.summary}>{issue.summary}</td>
+                          <td style={{ ...tdSticky(0, BG_NORMAL), opacity: 1 }}></td>
+                          
+                          <td style={tdSticky(COL_Q, BG_NORMAL)}>
+                            <a
+                              href={`https://tracker.yandex.ru/${ik}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              style={{
+                              	color: 'inherit',
+                              	textDecoration: 'underline',
+                              	textUnderlineOffset: '2px',
+                              }}
+                             >
+                               {ik}
+                             </a>
+                            </td>
+                          
+                          <td style={{ ...tdSticky(COL_Q + COL_K, BG_NORMAL), maxWidth: COL_N + 'px', overflow: 'hidden', textOverflow: 'ellipsis' }} title={issue.summary}>📌 {issue.summary}</td>
                           <td style={{ ...tdSticky(LEFT_T, BG_NORMAL), textAlign: 'center', fontVariantNumeric: 'tabular-nums', fontWeight: 500 }}>
                             {issueTotal > 0 ? formatDuration(issueTotal) : '—'}
                           </td>
                           {dates.map((d) => {
                             const val = issue.byDay[d] || 0;
                             return (
-                              <td key={d} style={{ ...tdTime, color: val === 0 ? 'rgba(128,128,128,0.25)' : 'inherit', backgroundColor: isWeekend(d) ? '#F0F0F0' : 'transparent' }}>
+                              <td key={d} style={{ ...tdTime, color: val === 0 ? 'rgba(128,128,128,0.25)' : 'inherit', backgroundColor: isWeekend(d) ? tableColors.weekend : 'transparent' }}>
                                 {val > 0 ? formatDuration(val) : '—'}
                               </td>
                             );
                           })}
                         </tr>
                         {/* Worklog sub-rows */}
-                        {dates.map((d) => {
+                        {showWorklogs && dates.map((d) => {
                           const dayWorklogs = worklogsByDay[d];
                           if (!dayWorklogs || dayWorklogs.length === 0) return null;
                           return dayWorklogs.map((wl, wi) => (
                             <tr key={ik + '_wl_' + d + '_' + wi} style={worklogRowStyle}>
                               <td style={tdSticky(0, BG_WORKLOG)}></td>
                               <td style={tdSticky(COL_Q, BG_WORKLOG)}></td>
+                              
                               <td
-                                style={{ ...tdSticky(COL_Q + COL_K, BG_WORKLOG), maxWidth: COL_N + 'px', overflow: 'hidden', textOverflow: 'ellipsis' }}
-                                title={wl.comment || '(без комментария)'}
+                                style={{
+                                  ...tdSticky(COL_Q + COL_K, BG_WORKLOG),
+                                  maxWidth: COL_N + 'px',
+                                  overflow: 'hidden',
+                                  textOverflow: 'ellipsis',
+							      fontSize: '12px',
+								  fontWeight: 400,
+							      fontStyle: 'normal',
+							      color: tableColors.muted,
+							    }}
+								title={wl.comment || '(без комментария)'}
                               >
+                                <span style={{ display: 'inline-block', width: '18px', marginLeft: '28px', color: '#35A56A', fontSize: '11px' }}>
+	                              ✓
+	                            </span>
                                 {wl.comment || '(без комментария)'}
                               </td>
                               <td style={tdSticky(LEFT_T, BG_WORKLOG)}></td>
@@ -1047,16 +1130,16 @@ function ReportsView() {
           </tbody>
           <tfoot>
             <tr style={totalRowStyle}>
-              <td style={{ ...tdSticky(0, BG_TOTAL), position: 'sticky' as const, bottom: 0, zIndex: 4 }}>
+              <td style={{ ...tdSticky(0, BG_TOTAL), fontSize: '14px', fontWeight: 700, position: 'sticky' as const, bottom: 0, zIndex: 4 }}>
                 <strong>Итого:</strong>
               </td>
-              <td style={{ ...tdSticky(COL_Q, BG_TOTAL), position: 'sticky' as const, bottom: 0, zIndex: 4 }}></td>
-              <td style={{ ...tdSticky(COL_Q + COL_K, BG_TOTAL), position: 'sticky' as const, bottom: 0, zIndex: 4 }}></td>
-              <td style={{ ...tdSticky(LEFT_T, BG_TOTAL), position: 'sticky' as const, bottom: 0, zIndex: 4, textAlign: 'center', fontVariantNumeric: 'tabular-nums' }}>
+              <td style={{ ...tdSticky(COL_Q, BG_TOTAL), fontSize: '14px', fontWeight: 700, position: 'sticky' as const, bottom: 0, zIndex: 4 }}></td>
+              <td style={{ ...tdSticky(COL_Q + COL_K, BG_TOTAL), fontSize: '14px', fontWeight: 700, position: 'sticky' as const, bottom: 0, zIndex: 4 }}></td>
+              <td style={{ ...tdSticky(LEFT_T, BG_TOTAL), fontSize: '14px', fontWeight: 700, position: 'sticky' as const, bottom: 0, zIndex: 4, textAlign: 'center', fontVariantNumeric: 'tabular-nums' }}>
                 <strong>{formatDuration(grandTotal)}</strong>
               </td>
               {dates.map((d) => (
-                <td key={d} style={{ ...tdTime, backgroundColor: '#D0D0D0', position: 'sticky' as const, bottom: 0, zIndex: 3, fontWeight: 700 }}>
+                <td key={d} style={{ ...tdTime, backgroundColor: tableColors.total, fontSize: '14px', fontWeight: 700, position: 'sticky' as const, bottom: 0, zIndex: 3 }}>
                   {grandDayTotals[d] > 0 ? formatDuration(grandDayTotals[d]) : '—'}
                 </td>
               ))}
@@ -1090,7 +1173,7 @@ function ReportsView() {
                     <td style={tdSticky(0, BG_SUBTOTAL)} colSpan={4}>
                       <strong>{q}</strong> — {formatDuration(queueTotal(q))}
                     </td>
-                    <td style={{ backgroundColor: '#E0E0E0', fontWeight: 600 }} colSpan={3}></td>
+                    <td style={{ backgroundColor: tableColors.subtotal, fontWeight: 600 }} colSpan={3}></td>
                   </tr>
                   {issueKeys.map((ik) => {
                     const issue = queueMap[q][ik];
@@ -1099,29 +1182,66 @@ function ReportsView() {
                     return (
                       <React.Fragment key={ik}>
                         <tr>
-                          <td style={{ ...tdSticky(0, BG_NORMAL), opacity: 0.3 }}></td>
-                          <td style={tdSticky(COL_Q, BG_NORMAL)}>{ik}</td>
-                          <td style={{ ...tdSticky(COL_Q + COL_K, BG_NORMAL), overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={issue.summary}>{issue.summary}</td>
+                          <td style={{ ...tdSticky(0, BG_NORMAL), opacity: 1 }}></td>
+                          <td style={tdSticky(COL_Q, BG_NORMAL)}>
+						    <a
+						      href={`https://tracker.yandex.ru/${ik}`}
+						      target="_blank"
+						      rel="noopener noreferrer"
+						      style={{
+						        color: 'inherit',
+						        textDecoration: 'underline',
+						        textUnderlineOffset: '2px',
+						        cursor: 'pointer',
+						       }}
+						    >
+						      {ik}
+						    </a>
+						  </td>
+                          
+                          <td
+                            style={{
+                              ...tdSticky(COL_Q + COL_K, BG_NORMAL),
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap',
+                            }}
+                            title={issue.summary}
+                          >
+                            📌 {issue.summary}
+                          </td>
                           <td style={{ ...tdSticky(LEFT_T, BG_NORMAL), textAlign: 'center', fontVariantNumeric: 'tabular-nums', fontWeight: 500 }}>
                             {issueTotal > 0 ? formatDuration(issueTotal) : '—'}
                           </td>
-                          <td style={{ ...tdStyle, color: '#999', fontSize: '11px' }} colSpan={3}>{issue.worklogs.length} ворклог(ов)</td>
+                          <td style={{ ...tdStyle, color: tableColors.muted, fontSize: '11px' }} colSpan={3}>{issue.worklogs.length} ворклог(ов)</td>
                         </tr>
                         {issue.worklogs.map((wl, wi) => (
                           <tr key={ik + '_wl_' + wi} style={worklogRowStyle}>
                             <td style={tdSticky(0, BG_WORKLOG)}></td>
                             <td style={tdSticky(COL_Q, BG_WORKLOG)}></td>
-                            <td style={{ ...tdSticky(COL_Q + COL_K, BG_WORKLOG), overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={wl.comment || '(без комментария)'}>
-                              {wl.comment || '(без комментария)'}
-                            </td>
+                            <td style={tdSticky(COL_Q + COL_K, BG_WORKLOG)}></td>
                             <td style={tdSticky(LEFT_T, BG_WORKLOG)}></td>
-                            <td style={{ ...tdStyle, fontSize: '11px', whiteSpace: 'nowrap' }}>
+                            <td style={{ ...tdStyle, fontSize: '12px', whiteSpace: 'nowrap' }}>
                               {formatDateHeader(wl.day)}
                             </td>
-                            <td style={{ ...tdTime, fontSize: '11px' }}>
+                            <td style={{ ...tdTime, fontSize: '12px' }}>
                               {formatDuration(wl.durationMs)}
                             </td>
-                            <td style={{ ...tdStyle, fontSize: '11px', whiteSpace: 'pre-wrap', wordBreak: 'break-word', lineHeight: '1.4' }}>
+                            <td
+                              style={{
+                              	...tdStyle,
+                              	fontSize: '12px',
+                              	fontWeight: 400,
+							    fontStyle: 'normal',
+							    whiteSpace: 'pre-wrap',
+							    wordBreak: 'break-word',
+							    lineHeight: '1.4',
+							    paddingLeft: '18px',
+                              }}
+                            >
+                              <span style={{ color: '#35A56A', marginRight: '6px' }}>
+                                ✓
+                              </span>
                               {wl.comment || '(без комментария)'}
                             </td>
                           </tr>
@@ -1133,13 +1253,13 @@ function ReportsView() {
               );
             })}
             <tr style={totalRowStyle}>
-              <td style={{ ...tdSticky(0, BG_TOTAL), position: 'sticky' as const, bottom: 0, zIndex: 4 }} colSpan={3}>
+              <td style={{ ...tdSticky(0, BG_TOTAL), fontSize: '14px', fontWeight: 700, position: 'sticky' as const, bottom: 0, zIndex: 4 }} colSpan={3}>
                 <strong>Итого:</strong>
               </td>
-              <td style={{ ...tdSticky(LEFT_T, BG_TOTAL), position: 'sticky' as const, bottom: 0, zIndex: 4, textAlign: 'center', fontVariantNumeric: 'tabular-nums' }}>
+              <td style={{ ...tdSticky(LEFT_T, BG_TOTAL), fontSize: '14px', fontWeight: 700, position: 'sticky' as const, bottom: 0, zIndex: 4, textAlign: 'center', fontVariantNumeric: 'tabular-nums' }}>
                 <strong>{formatDuration(grandTotal)}</strong>
               </td>
-              <td style={{ backgroundColor: '#D0D0D0', position: 'sticky' as const, bottom: 0, zIndex: 3, fontWeight: 700 }} colSpan={3}></td>
+              <td style={{ backgroundColor: tableColors.total, fontSize: '14px', fontWeight: 700, position: 'sticky' as const, bottom: 0, zIndex: 3}} colSpan={3}></td>
             </tr>
           </tbody>
         </table>

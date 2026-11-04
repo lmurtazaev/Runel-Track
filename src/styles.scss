@@ -76,3 +76,19 @@
 .g-root_theme_dark-hc {
     --orb-elevation-sunken: rgb(20, 20, 23);
 }
+
+html,
+body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    overflow: hidden !important;
+}
+
+#root {
+    width: 100%;
+    max-width: 100%;
+    overflow: hidden;
+    box-sizing: border-box;
+    background: transparent;
+}
