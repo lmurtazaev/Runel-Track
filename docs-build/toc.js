@@ -1,1 +1,0 @@
-window.__DATA__.data.toc = {"title":"ВоркТаймер","items":[{"name":"О плагине","href":"index.html","id":"5bc3352e-d47f-4f37-911d-fd6817972df3"}],"path":"toc.yaml","id":"ded8f2f2-d012-4d8f-af91-7f231c183655"};

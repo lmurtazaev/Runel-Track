@@ -1,15 +1,15 @@
 {
   "$schema": "./manifest.schema.json",
   "manifest_version": 1,
-  "version": "1.0.2",
+  "version": "1.0.3",
   "slug": "runel-track",
   "name": {
-    "ru": "ВоркТаймер",
-    "en": "WorkTimer"
+    "ru": "ВоркТаймер: Отчеты по времени",
+    "en": "WorkTimer: Time Reports"
   },
   "description": {
-    "ru": "Учёт времени в карточке задачи с автоматической записью в ворклоги",
-    "en": "Time tracker in issue card with automatic logging to worklogs"
+    "ru": "Учет времени и управление ворклогами в Яндекс Трекере",
+    "en": "Time tracking and worklog management in Yandex Tracker"
   },
   "categories": [
     "productivity"
@@ -27,8 +27,8 @@
         {
           "entrypoint": "index.html",
           "title": {
-            "ru": "Таймер",
-            "en": "Timer"
+            "ru": "⏱ Таймер",
+            "en": "⏱ Timer"
           },
           "contextLevel": "full"
         }
@@ -37,8 +37,8 @@
         {
           "entrypoint": "index.html",
           "title": {
-            "ru": "Таймер",
-            "en": "Timer"
+            "ru": "⏱ Таймер",
+            "en": "⏱ Timer"
           },
           "contextLevel": "full"
         }
@@ -47,8 +47,8 @@
         {
           "entrypoint": "index.html",
           "title": {
-            "ru": "Отчёты по времени",
-            "en": "Time Reports"
+            "ru": "ВоркТаймер: Отчеты по времени",
+            "en": "WorkTimer: Time Reports"
           },
           "contextLevel": "basic"
         }

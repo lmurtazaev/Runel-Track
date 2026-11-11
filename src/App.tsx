@@ -6,7 +6,6 @@ import {
   hostApi,
   uiApi,
 } from '@weavix/tracker-plugin-sdk-react';
-import { Button } from '@gravity-ui/uikit';
 
 // --- Модульный лог (проверка загрузки) ---
 console.log('[runel-track] Module loaded at', new Date().toISOString(), '| location:', window.location.href);
@@ -17,6 +16,9 @@ const globalStyles = `
   html::-webkit-scrollbar, body::-webkit-scrollbar { display: none !important; }
   .no-scrollbar::-webkit-scrollbar { display: none; }
   .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  .worklog-card .worklog-options { opacity: 0; }\n  .worklog-card:hover .worklog-options { opacity: 1; }\n  .loading-spinner { display: inline-block; width: 11px; height: 11px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; vertical-align: -2px; animation: wt-spin .7s linear infinite; }
+  @keyframes wt-spin { to { transform: rotate(360deg); } }
+  .day-worklogs-scroll { scrollbar-width: thin; }
   .timer-font {
     font-variant-numeric: tabular-nums;
     font-feature-settings: "tnum";
@@ -40,7 +42,7 @@ type TimerState = {
 const BG_LIGHT = '#F4F4F6';
 const BG_DARK = '#687381';
 const TEXT_LIGHT = '#494949';
-const TEXT_DARK = '#ECECEC';
+const TEXT_DARK = '#FFFFFF';
 
 function getTextColor(theme: string | undefined): string {
   if (!theme) return TEXT_LIGHT;
@@ -68,13 +70,6 @@ const btnStyle: React.CSSProperties = {
 };
 
 // Отдельный стиль для основных кнопок управления таймером.
-const timerBtnStyle: React.CSSProperties = {
-  ...btnStyle,
-  backgroundColor: '#FFFFFF',
-  border: '1px solid #626262',
-  color: '#000000',
-};
-
 const inputStyle: React.CSSProperties = {
   width: '100%',
   padding: '6px 10px',
@@ -85,6 +80,20 @@ const inputStyle: React.CSSProperties = {
   fontSize: '13px',
   boxSizing: 'border-box',
 };
+function getCommentFieldStyle(isDark: boolean): React.CSSProperties {
+  return isDark
+    ? { ...inputStyle }
+    : {
+        width: '100%',
+        padding: '7px 12px',
+        border: '1px solid #8B7FE0',
+        borderRadius: '8px',
+        backgroundColor: '#FFFFFF',
+        color: '#252525',
+        fontSize: '13px',
+        boxSizing: 'border-box',
+      };
+}
 
 // --- Утилиты ---
 function pad2(num: number): string {
@@ -159,12 +168,15 @@ function parseDurationToMs(w: any): number {
     return val * 60000;
   }
   if (typeof val === 'string') {
-    const isoMatch = val.match(/^PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?$/i);
+    const isoMatch = val.match(/^P(?:(\d+)W)?(?:(\d+)D)?(?:T(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?)?$/i);
     if (isoMatch) {
-      const h = parseInt(isoMatch[1] || '0', 10);
-      const m = parseInt(isoMatch[2] || '0', 10);
-      const s = parseInt(isoMatch[3] || '0', 10);
-      return (h * 3600 + m * 60 + s) * 1000;
+      const weeks = parseInt(isoMatch[1] || '0', 10);
+      const days = parseInt(isoMatch[2] || '0', 10);
+      const hours = parseInt(isoMatch[3] || '0', 10);
+      const minutes = parseInt(isoMatch[4] || '0', 10);
+      const seconds = parseInt(isoMatch[5] || '0', 10);
+      // Tracker counts a workday as 8 hours and a workweek as 5 workdays.
+      return (weeks * 5 * 8 * 3600 + days * 8 * 3600 + hours * 3600 + minutes * 60 + seconds) * 1000;
     }
     const n = parseFloat(val);
     if (!isNaN(n)) return n > 100000 ? n : n * 60000;
@@ -212,6 +224,69 @@ export default function App() {
 }
 
 // --- TimerWidget ---
+// Иконки кнопок таймера (SVG)
+const PlayIcon = ({ size = 13 }: { size?: number }) => (
+  <svg width={size} height={(size * 17) / 15} viewBox="0 0 15 17" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ display: 'block', flexShrink: 0 }}>
+    <path d="M13.5295 6.30843C14.9334 7.125 14.9334 9.15293 13.5295 9.9695L3.18262 15.9875C1.77086 16.8086 0.000286102 15.7902 0.000286102 14.157L0.000286102 2.12095C0.000286102 0.487766 1.77087 -0.530702 3.18262 0.290412L13.5295 6.30843Z" fill="#FFFFFF"/>
+  </svg>
+);
+
+const PlayOutlinedIcon = ({ size = 13 }: { size?: number }) => (
+  <svg width={size} height={(size * 19) / 18} viewBox="0 -1 14 18" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ display: 'block', flexShrink: 0 }}>
+    <path d="M13.6423 6.29774C15.068 7.11819 15.068 9.17537 13.6423 9.99581L3.19758 16.0063C1.77536 16.8247 0.000205994 15.7982 0.000205994 14.1573L0.000205994 2.13628C0.000205994 0.495384 1.77536 -0.531182 3.19758 0.287245L13.6423 6.29774Z" fill="#FFFFFF" stroke="#FF6F00" strokeWidth="1.3"/>
+  </svg>
+);
+
+const PauseIcon = ({ size = 13 }: { size?: number }) => (
+  <svg width={size} height={(size * 14) / 13} viewBox="0 0 13 16" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ display: 'block', flexShrink: 0 }}>
+    <rect width="6" height="16" rx="2.11765" fill="#463F91"/>
+    <rect x="7.22" width="6" height="16" rx="2.11765" fill="#463F91"/>
+  </svg>
+);
+
+const StopIcon = ({ size = 14 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ display: 'block', flexShrink: 0 }}>
+    <rect width="15.8824" height="16" rx="3.17647" fill="#FF4800"/>
+  </svg>
+);
+
+// Стили кнопок таймера
+const timerBtnBase: React.CSSProperties = {
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: '7px',
+  padding: '7px 14px',
+  borderRadius: '6px',
+  cursor: 'pointer',
+  fontSize: '13px',
+  fontWeight: 500,
+  border: 'none',
+  whiteSpace: 'nowrap',
+};
+const startBtnStyle: React.CSSProperties = { ...timerBtnBase, backgroundColor: '#FF6F00', color: '#FFFFFF' };
+const pauseBtnStyle: React.CSSProperties = { ...timerBtnBase, backgroundColor: '#FFFFFF', border: '1.6px solid #FF6F00', color: '#463F91' };
+const resumeBtnStyle: React.CSSProperties = { ...timerBtnBase, backgroundColor: '#FFFFFF', border: '1.6px solid #FF6F00', color: '#463F91' };
+const stopBtnStyle: React.CSSProperties = { ...timerBtnBase, backgroundColor: '#131962', color: '#FFFFFF' };
+const submitBtnStyle: React.CSSProperties = { ...timerBtnBase, backgroundColor: '#FF6F00', color: '#FFFFFF' };
+const cancelBtnStyle: React.CSSProperties = { ...timerBtnBase, backgroundColor: '#FFFFFF', border: '1.6px solid #463F91', color: '#463F91' };
+
+// Компактный вид: крупные кнопки
+const compactBtnBase: React.CSSProperties = {
+  ...timerBtnBase,
+  height: '40px',
+  padding: '0 18px',
+  fontSize: '18px',
+  gap: '12px',
+  borderRadius: '8px',
+  margin: '6px 0'
+};
+const compactStartBtnStyle: React.CSSProperties = { ...compactBtnBase, backgroundColor: '#FF6F00', color: '#FFFFFF' };
+const compactPauseBtnStyle: React.CSSProperties = { ...compactBtnBase, backgroundColor: '#FFFFFF', border: '1.6px solid #FF6F00', color: '#463F91' };
+const compactResumeBtnStyle: React.CSSProperties = { ...compactBtnBase, backgroundColor: '#FFFFFF', border: '1.6px solid #FF6F00', color: '#463F91' };
+const compactStopBtnStyle: React.CSSProperties = { ...compactBtnBase, backgroundColor: '#131962', color: '#FFFFFF' };
+const compactSubmitBtnStyle: React.CSSProperties = { ...compactBtnBase, backgroundColor: '#FF6F00', color: '#FFFFFF' };
+const compactCancelBtnStyle: React.CSSProperties = { ...compactBtnBase, backgroundColor: '#FFFFFF', border: '1.6px solid #463F91', color: '#463F91' };
+
 function TimerWidget({ issueKey, compact = false, theme }: {
   issueKey: string; compact?: boolean; theme?: string;
 }) {
@@ -225,17 +300,19 @@ function TimerWidget({ issueKey, compact = false, theme }: {
   const tickRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const bucketName = 'issue_' + issueKey;
   const { loadState, saveState } = useTimerStorage(bucketName);
-  const bgColor = getBgColor(theme);
-  
-  useEffect(() => {
-  document.body.style.backgroundColor = bgColor;
-  document.documentElement.style.backgroundColor = bgColor;
+  const isDark = theme?.startsWith('dark') ?? false;
+  const bgColor = isDark ? BG_DARK : '#F0EDFF';
+  const timeColor = isDark ? '#FFFFFF' : '#131962';
 
-  return () => {
-    document.body.style.backgroundColor = '';
-    document.documentElement.style.backgroundColor = '';
-  };
-}, [bgColor]);
+  useEffect(() => {
+    document.body.style.backgroundColor = bgColor;
+    document.documentElement.style.backgroundColor = bgColor;
+
+    return () => {
+      document.body.style.backgroundColor = '';
+      document.documentElement.style.backgroundColor = '';
+    };
+  }, [bgColor]);
 
   useEffect(() => {
     (async () => {
@@ -276,7 +353,13 @@ function TimerWidget({ issueKey, compact = false, theme }: {
     submitMsRef.current = finalMs;
     const ns: TimerState = { status: 'idle', startedAt: null, accumulatedMs: finalMs, totalMs: state.totalMs + finalMs };
     setState(ns); saveState(ns);
-    setShowForm(true); setComment(''); setErrorMsg('');
+    // Комментарий не сбрасываем: он мог быть введён до старта или во время работы.
+    setShowForm(true); setErrorMsg('');
+  };
+
+  const handleCancel = () => {
+    setShowForm(false);
+    setErrorMsg('');
   };
 
   const handleSubmit = async () => {
@@ -295,6 +378,7 @@ function TimerWidget({ issueKey, compact = false, theme }: {
       setState({ status: 'idle', startedAt: null, accumulatedMs: 0, totalMs: state.totalMs });
       saveState({ status: 'idle', startedAt: null, accumulatedMs: 0, totalMs: state.totalMs });
       setShowForm(false);
+      setComment('');
       try { uiApi.toaster.add({ title: 'Время отправлено', theme: 'success', content: formatDuration(ms) + ' — ' + issueKey }); }
       catch (te) { console.warn('Toaster:', te); }
     } catch (e: any) {
@@ -309,27 +393,61 @@ function TimerWidget({ issueKey, compact = false, theme }: {
 
   const isRunning = state.status === 'running';
   const isPaused = state.status === 'paused';
-  const submitMs = submitMsRef.current;
 
+  // Кнопки: одновременно показывается только одна группа состояний.
+  // showForm (после Стопа) -> Отмена + Отправить; иначе Старт / Пауза+Стоп / Продолжить+Стоп.
+  const buttons = (
+    <>
+      {showForm ? (
+        <>
+          <button onClick={handleCancel} disabled={submitting} style={cancelBtnStyle}>Отмена</button>
+          <button onClick={handleSubmit} disabled={submitting} style={submitBtnStyle}>{submitting ? 'Отправка…' : 'Отправить'}</button>
+        </>
+      ) : (
+        <>
+          {state.status === 'idle' && <button onClick={handleStart} style={startBtnStyle}><PlayIcon size={13} /> Старт</button>}
+          {isRunning && <button onClick={handlePause} style={pauseBtnStyle}><PauseIcon /> Пауза</button>}
+          {isPaused && <button onClick={handleResume} style={resumeBtnStyle}><PlayOutlinedIcon /> Продолжить</button>}
+          {(isRunning || isPaused) && <button onClick={handleStop} style={stopBtnStyle}><StopIcon /> Стоп</button>}
+        </>
+      )}
+    </>
+  );
+
+  // Поле комментария: светлая тема — белый фон и контур #8B7FE0, тёмная — прежние стили.
   if (compact) {
+    // Компактный вид: верхняя линия — кнопки слева, время справа (одна горизонталь).
+    // Поле комментария появляется только после нажатия на Стоп.
+    const topButtons = (
+      <>
+        {state.status === 'idle' && <button onClick={handleStart} style={compactStartBtnStyle}><PlayIcon size={20} /> Старт</button>}
+        {isRunning && <button onClick={handlePause} style={compactPauseBtnStyle}><PauseIcon size={20} /> Пауза</button>}
+        {isPaused && <button onClick={handleResume} style={compactResumeBtnStyle}><PlayOutlinedIcon size={20} /> Продолжить</button>}
+        {(isRunning || isPaused) && <button onClick={handleStop} style={compactStopBtnStyle}><StopIcon size={20} /> Стоп</button>}
+      </>
+    );
+
     return (
-      <div className="no-scrollbar" style={{ padding: '8px 12px', backgroundColor: bgColor, color: getTextColor(theme), overflow: 'hidden', width: '100%', boxSizing: 'border-box' }}>
-        <div className="timer-font" style={{ fontSize: '22px', fontWeight: 600, textAlign: 'center', marginBottom: '8px' }}>{formatTime(displayMs)}</div>
-        <div style={{ display: 'flex', gap: '6px', justifyContent: 'center', flexWrap: 'wrap' }}>
-          {state.status === 'idle' && <button onClick={handleStart} style={timerBtnStyle}>▶ Старт</button>}
-          {isRunning && <button onClick={handlePause} style={timerBtnStyle}>⏸ Пауза</button>}
-          {isPaused && <button onClick={handleResume} style={timerBtnStyle}>▶ Продолжить</button>}
-          {(isRunning || isPaused) && <button onClick={handleStop} style={timerBtnStyle}>⏹ Стоп</button>}
+      <div className="no-scrollbar" style={{ padding: '12px 16px', backgroundColor: bgColor, color: getTextColor(theme), overflow: 'hidden', width: '100%', boxSizing: 'border-box' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>{topButtons}</div>
+          <div className="timer-font" style={{ fontSize: '36px', fontWeight: 700, color: timeColor, whiteSpace: 'nowrap' }}>{formatTime(displayMs)}</div>
         </div>
         {showForm && (
-          <div style={{ marginTop: '12px', padding: '12px', background: 'rgba(255,255,255,0.15)', borderRadius: '8px' }}>
-            <div className="timer-font" style={{ fontSize: '20px', fontWeight: 600, textAlign: 'center', marginBottom: '8px' }}>{formatTime(submitMs)}</div>
-            {errorMsg && <div style={{ color: '#c62828', fontSize: '13px', padding: '8px', background: 'rgba(255,0,0,0.1)', borderRadius: '6px', marginBottom: '12px' }}>{errorMsg}</div>}
-            <div style={{ fontSize: '13px', opacity: 0.7, marginBottom: '6px' }}>Комментарий (необязательно):</div>
-            <input type="text" placeholder="Что было сделано?" value={comment} onChange={(e) => setComment(e.target.value)} style={inputStyle} autoFocus />
-            <div style={{ marginTop: '12px', display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-              <Button view="flat" onClick={() => setShowForm(false)} disabled={submitting}>Отмена</Button>
-              <Button view="action" onClick={handleSubmit} disabled={submitting}>{submitting ? 'Отправка…' : 'Отправить'}</Button>
+          <div style={{ marginTop: '12px', padding: '12px', background: isDark ? 'rgba(255,255,255,0.15)' : '#DFD9FF', borderRadius: '8px' }}>
+            {errorMsg && <div style={{ color: '#c62828', fontSize: '13px', padding: '8px', background: 'rgba(255,0,0,0.1)', borderRadius: '6px', marginBottom: '10px' }}>{errorMsg}</div>}
+            <div style={{ fontSize: '16px', fontWeight: 700, marginBottom: '6px' }}>Комментарий к работе:</div>
+            <textarea
+              value={comment}
+              onChange={(e) => setComment(e.target.value)}
+              placeholder="Ваш комментарий (над чем работаете, что сделано...)"
+              rows={2}
+              autoFocus
+              style={{ ...getCommentFieldStyle(isDark), resize: 'vertical', minHeight: '52px', lineHeight: 1.5, fontFamily: 'inherit' }}
+            />
+            <div style={{ marginTop: '12px', display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+              <button onClick={handleCancel} disabled={submitting} style={compactCancelBtnStyle}>Отмена</button>
+              <button onClick={handleSubmit} disabled={submitting} style={compactSubmitBtnStyle}>{submitting ? 'Отправка…' : 'Отправить'}</button>
             </div>
           </div>
         )}
@@ -339,24 +457,27 @@ function TimerWidget({ issueKey, compact = false, theme }: {
 
   return (
     <div className="no-scrollbar" style={{ padding: '16px', backgroundColor: bgColor, color: getTextColor(theme), overflow: 'hidden', width: '100%', boxSizing: 'border-box' }}>
-      <div className="timer-font" style={{ fontSize: '28px', fontWeight: 600 }}>{formatTime(displayMs)}</div>
-      <div style={{ marginTop: '12px', display: 'flex', gap: '8px' }}>
-        {state.status === 'idle' && <button onClick={handleStart} style={timerBtnStyle}>▶ Старт</button>}
-        {isRunning && <button onClick={handlePause} style={timerBtnStyle}>⏸ Пауза</button>}
-        {isPaused && <button onClick={handleResume} style={timerBtnStyle}>▶ Продолжить</button>}
-        {(isRunning || isPaused) && <button onClick={handleStop} style={timerBtnStyle}>⏹ Стоп</button>}
-      </div>
-      {showForm && (
-        <div style={{ marginTop: '20px', padding: '16px', background: 'rgba(255,255,255,0.15)', borderRadius: '8px' }}>
-          <div className="timer-font" style={{ fontSize: '24px', fontWeight: 600, textAlign: 'center', marginBottom: '12px' }}>{formatTime(submitMs)}</div>
-          {errorMsg && <div style={{ color: '#c62828', fontSize: '13px', padding: '8px', background: 'rgba(255,0,0,0.1)', borderRadius: '6px', marginBottom: '12px' }}>{errorMsg}</div>}
-          <div style={{ fontSize: '14px', opacity: 0.7, marginBottom: '8px' }}>Комментарий к работе:</div>
-          <input type="text" placeholder="Что было сделано?" value={comment} onChange={(e) => setComment(e.target.value)} style={inputStyle} autoFocus />
-          <div style={{ marginTop: '16px', display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
-            <Button view="flat" onClick={() => setShowForm(false)} disabled={submitting}>Отмена</Button>
-            <Button view="action" onClick={handleSubmit} disabled={submitting}>{submitting ? 'Отправка…' : 'Отправить'}</Button>
-          </div>
+      <div style={{ display: 'flex', alignItems: 'stretch', gap: '28px' }}>
+        {/* Левая колонка: время сверху, кнопки прижаты к нижней границе */}
+        <div style={{ flex: '0 0 auto', display: 'flex', flexDirection: 'column' }}>
+          <div className="timer-font" style={{ fontSize: '34px', fontWeight: 700, lineHeight: 1.15, color: timeColor, whiteSpace: 'nowrap' }}>{formatTime(displayMs)}</div>
+          <div style={{ display: 'flex', gap: '8px', marginTop: 'auto', paddingTop: '10px' }}>{buttons}</div>
         </div>
+        {/* Правая колонка: комментарий, нижняя граница поля совпадает с нижней границей кнопок */}
+        <div style={{ flex: '1 1 auto', minWidth: '220px', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ fontSize: '16px', fontWeight: 700, marginBottom: '6px', marginTop: '6px' }}>Комментарий к работе:</div>
+          <textarea
+            value={comment}
+            onChange={(e) => setComment(e.target.value)}
+            placeholder="Ваш комментарий (над чем работаете, что сделано...)"
+            rows={2}
+            autoFocus
+            style={{ ...getCommentFieldStyle(isDark), resize: 'vertical', minHeight: '52px', lineHeight: 1.5, fontFamily: 'inherit' }}
+          />
+        </div>
+      </div>
+      {errorMsg && (
+        <div style={{ marginTop: '10px', color: '#c62828', fontSize: '13px', padding: '8px', background: 'rgba(255,0,0,0.1)', borderRadius: '6px' }}>{errorMsg}</div>
       )}
     </div>
   );
@@ -364,21 +485,447 @@ function TimerWidget({ issueKey, compact = false, theme }: {
 
 // --- NavigationPage ---
 function NavigationPage({ theme }: { theme?: string }) {
-  const [view, setView] = useState<'timer' | 'reports'>('timer');
+  const [view, setView] = useState<'work' | 'reports'>('work');
   const bgColor = getBgColor(theme);
   return (
     <div className="no-scrollbar" style={{ backgroundColor: bgColor, color: getTextColor(theme), minHeight: '100vh', width: '100%', boxSizing: 'border-box' }}>
       <div style={{ display: 'flex', borderBottom: '1px solid rgba(0,0,0,0.1)' }}>
-        <button onClick={() => setView('timer')} style={{ padding: '10px 20px', border: 'none', borderBottom: view === 'timer' ? '2px solid #333' : '2px solid transparent', backgroundColor: 'transparent', cursor: 'pointer', fontSize: '14px', fontWeight: view === 'timer' ? 600 : 400, color: 'inherit' }}>⏱ Таймер</button>
-        <button onClick={() => setView('reports')} style={{ padding: '10px 20px', border: 'none', borderBottom: view === 'reports' ? '2px solid #333' : '2px solid transparent', backgroundColor: 'transparent', cursor: 'pointer', fontSize: '14px', fontWeight: view === 'reports' ? 600 : 400, color: 'inherit' }}>📋 Отчёты</button>
+        <button onClick={() => setView('work')} style={{ padding: '10px 20px', border: 'none', borderBottom: view === 'work' ? '2px solid #FF6F00' : '2px solid transparent', backgroundColor: 'transparent', cursor: 'pointer', fontSize: '14px', fontWeight: view === 'work' ? 600 : 400, color: 'inherit' }}><span style={{ fontSize: 20, color: view === 'work' ? '#FF6F00' : 'inherit', marginRight: 7, verticalAlign: '-2px' }}>☑︎</span>Моя работа</button>
+        <button onClick={() => setView('reports')} style={{ padding: '10px 20px', border: 'none', borderBottom: view === 'reports' ? '2px solid #FF6F00' : '2px solid transparent', backgroundColor: 'transparent', cursor: 'pointer', fontSize: '14px', fontWeight: view === 'reports' ? 600 : 400, color: 'inherit' }}><span style={{ fontSize: 20, color: view === 'reports' ? '#FF6F00' : 'inherit', marginRight: 7, verticalAlign: '-2px' }}>⏍︎</span>Отчеты</button>
       </div>
-      {view === 'timer' ? <GlobalTimer /> : <ReportsView theme={theme} />}
+      {view === 'work' ? <MyWorkView theme={theme} /> : <ReportsView theme={theme} />}
     </div>
   );
 }
 
+type IssueOption = { key: string; summary: string; type?: string };
+type WorklogRow = { id: string; issueKey: string; summary: string; comment: string; date: string; durationMs: number; type?: string };
+
+function isoDate(d: Date): string {
+  return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate());
+}
+function weekStart(date: Date): Date {
+  const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
+  return d;
+}
+function displayDate(date: Date): string {
+  return pad2(date.getDate()) + '.' + pad2(date.getMonth() + 1);
+}
+function hoursLabel(ms: number): string {
+  const mins = Math.round(ms / 60000);
+  return Math.floor(mins / 60) + 'ч ' + pad2(mins % 60) + 'м';
+}
+function totalHoursLabel(ms: number): string {
+  const mins = Math.round(ms / 60000);
+  const hours = Math.floor(mins / 60);
+  const minutes = mins % 60;
+  return (hours ? hours + ' ч' : '') + (hours && minutes ? ' ' : '') + (minutes ? minutes + ' мин' : (!hours ? '0 ч' : ''));
+}
+function parseHumanDuration(value: string): number {
+  const h = value.match(/(\d+)\s*ч/i);
+  const m = value.match(/(\d+)\s*м/i);
+  if (!h && !m) return 0;
+  return ((h ? Number(h[1]) : 0) * 60 + (m ? Number(m[1]) : 0)) * 60000;
+}
+function dateToRu(value: string): string {
+  if (!value) return '';
+  const d = new Date(value + 'T00:00:00');
+  return displayDate(d) + '.' + String(d.getFullYear()).slice(-2);
+}
+
+function TaskAutocomplete({ value, onChange, onSelect, disabled }: {
+  value: string; onChange: (value: string) => void; onSelect: (issue: IssueOption) => void; disabled?: boolean;
+}) {
+  const [results, setResults] = useState<IssueOption[]>([]);
+  const [open, setOpen] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [focused, setFocused] = useState(false);
+  useEffect(() => {
+    const query = value.trim();
+    if (!focused || query.length < 2) { setResults([]); setOpen(false); return; }
+    const timer = setTimeout(async () => {
+      setBusy(true);
+      try {
+        const response = await (trackerApi as any).v3.get['/issues/_suggest']({
+          queryParams: { input: query, full: true, fields: ['summary', 'type'] },
+        });
+        let rows = (response as any)?.data || response || [];
+        // _suggest focuses on summaries; the query search also finds issue-key fragments.
+        if (rows.length < 5) {
+          const searchResponse = await (trackerApi as any).v3.post['/issues/_search']({
+            queryParams: { perPage: 5, page: 1 },
+            bodyParams: { query },
+          });
+          const searchRows = (searchResponse as any)?.data || [];
+          const byKey = new Map<string, any>();
+          [...rows, ...searchRows].forEach((item: any) => { if (item?.key) byKey.set(item.key, item); });
+          rows = Array.from(byKey.values());
+        }
+        setResults(rows.slice(0, 5).map((item: any) => ({
+          key: item.key, summary: item.summary || '', type: item.type?.key || item.type?.id || '',
+        })));
+        setOpen(true);
+      } catch (error) {
+        console.warn('Issue search failed:', error);
+        setResults([]);
+        setOpen(false);
+      } finally { setBusy(false); }
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [value, focused]);
+  return (
+    <div style={{ position: 'relative', width: '100%' }}>
+      <input value={value} disabled={disabled} placeholder="Ключ или название задачи" autoComplete="off"
+        onFocus={() => setFocused(true)} onBlur={() => setTimeout(() => setOpen(false), 160)}
+        onChange={(e) => onChange(e.target.value)} style={inputStyle} />
+      {open && (results.length > 0 || busy) && (
+        <div style={{ position: 'absolute', top: 'calc(100% + 4px)', left: 0, right: 0, zIndex: 40, background: 'var(--g-color-base-float, #fff)', color: 'var(--g-color-text-primary, #222)', border: '1px solid var(--g-color-line-generic, #ccc)', borderRadius: 8, boxShadow: '0 8px 24px rgba(0,0,0,.18)', overflow: 'hidden' }}>
+          {busy && <div style={{ padding: 10, fontSize: 12 }}>Поиск...</div>}
+          {results.map((issue) => (
+            <button key={issue.key} type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => { onSelect(issue); setOpen(false); setFocused(false); }}
+              style={{ display: 'block', width: '100%', textAlign: 'left', padding: '9px 12px', border: 0, borderBottom: '1px solid rgba(128,128,128,.15)', background: 'transparent', color: 'inherit', cursor: 'pointer' }}>
+              <strong>{issue.key}</strong><span style={{ marginLeft: 8, opacity: .8 }}>{issue.summary}</span>
+            </button>
+          ))}
+          {!busy && results.length === 0 && <div style={{ padding: 10, fontSize: 12, opacity: .7 }}>Ничего не найдено</div>}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function WorklogModal({ theme, initial, initialDate, onClose, onSaved }: {
+  theme?: string; initial?: WorklogRow; initialDate?: string; onClose: () => void; onSaved: (row: WorklogRow, previousId?: string) => Promise<void> | void;
+}) {
+  const [task, setTask] = useState(initial ? `${initial.issueKey}: ${initial.summary}` : '');
+  const [issueKey, setIssueKey] = useState(initial?.issueKey || '');
+  const [comment, setComment] = useState(initial?.comment || '');
+  const [date, setDate] = useState(initial?.date || initialDate || isoDate(new Date()));
+  const [duration, setDuration] = useState(initial ? hoursLabel(initial.durationMs) : '');
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+  const isDark = theme?.startsWith('dark');
+  const surface = isDark ? '#303640' : '#FFFFFF';
+  const text = isDark ? '#F3F4F6' : '#252525';
+  const handleSave = async () => {
+    const ms = parseHumanDuration(duration);
+    const resolvedKey = issueKey || (task.trim().match(/^([A-Z][A-Z0-9_]+-\d+)/i)?.[1] || '');
+    if (!resolvedKey || ms <= 0 || !date) { setError('Укажите задачу, дату и корректное время.'); return; }
+    setSaving(true); setError('');
+    try {
+      const start = new Date(date + 'T09:00:00');
+      const startISO = getLocalISOStringFor(start);
+      const api = trackerApi as any;
+      let response: any;
+      if (initial && date === initial.date) {
+        response = await api.v3.patch['/issues/{issue}/worklog/{id}']({
+          pathParams: { issue: initial.issueKey, id: initial.id },
+          bodyParams: { duration: formatDurationISO(ms), comment },
+        });
+      } else {
+        // For a date change, create the replacement before deleting the original.
+        response = await api.v3.post['/issues/{issue}/worklog']({
+          pathParams: { issue: initial ? initial.issueKey : resolvedKey },
+          bodyParams: { start: startISO, duration: formatDurationISO(ms), comment: comment || undefined },
+        });
+        if (initial) {
+          await api.v3.delete['/issues/{issue}/worklog/{id}']({
+            pathParams: { issue: initial.issueKey, id: initial.id },
+          });
+        }
+      }
+      const responseData = (response as any)?.data || response || {};
+      const nextRow: WorklogRow = {
+        id: String(responseData.id || responseData._id || (initial && date === initial.date ? initial.id : `pending-${Date.now()}`)),
+        issueKey: initial?.issueKey || resolvedKey,
+        summary: initial?.summary || task.trim().split(':').slice(1).join(':').trim(),
+        comment,
+        date,
+        durationMs: ms,
+        type: initial?.type,
+      };
+      await onSaved(nextRow, initial?.id);
+      onClose();
+    } catch (e: any) { setError(e?.message || 'Не удалось сохранить ворклог'); }
+    finally { setSaving(false); }
+  };
+  return (
+    <div onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }} style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,.48)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+      <div role="dialog" aria-modal="true" style={{ width: 'min(480px, 100%)', background: surface, color: text, borderRadius: 14, padding: 22, boxShadow: '0 18px 60px rgba(0,0,0,.3)' }}>
+        <div style={{ fontSize: 19, fontWeight: 650, marginBottom: 18 }}>{initial ? 'Редактировать ворклог' : 'Добавить ворклог'}</div>
+        <label style={fieldLabel}>Задача</label>
+        {initial ? <input value={task} disabled style={inputStyle} /> :
+          <TaskAutocomplete value={task} onChange={(v) => { setTask(v); setIssueKey(''); }}
+            onSelect={(issue) => { setIssueKey(issue.key); setTask(`${issue.key}: ${issue.summary}`); }} />}
+        <label style={fieldLabel}>Комментарий</label>
+        <input value={comment} onChange={(e) => setComment(e.target.value)} placeholder="Что было сделано?" style={inputStyle} />
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 14 }}>
+          <div><label style={fieldLabel}>Дата</label><div style={{ position: 'relative' }}>
+            <input value={dateToRu(date)} readOnly style={{ ...inputStyle, paddingRight: 42 }} />
+            <span style={{ position: 'absolute', right: 11, top: 8, pointerEvents: 'none' }}>▦</span>
+            <input aria-label="Выбрать дату" type="date" value={date} onChange={(e) => setDate(e.target.value)}
+              style={{ position: 'absolute', right: 0, top: 0, width: 38, height: '100%', opacity: 0, cursor: 'pointer' }} />
+          </div></div>
+          <div><label style={fieldLabel}>Время</label><input value={duration} onChange={(e) => setDuration(e.target.value)} placeholder="2ч, 1ч 30м, 45м" style={inputStyle} /></div>
+        </div>
+        {error && <div style={{ color: '#E05252', fontSize: 13, marginTop: 12 }}>{error}</div>}
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 22 }}>
+          <button onClick={onClose} disabled={saving} style={{ ...btnStyle, padding: '9px 17px', background: isDark ? '#48515E' : '#ECEEF2', border: 0 }}>Отмена</button>
+          <button onClick={handleSave} disabled={saving} style={{ ...btnStyle, padding: '9px 18px', color: '#fff', background: '#463F91', border: 0, fontWeight: 600 }}>{saving ? 'Сохранение...' : 'Затрекать'}</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+const fieldLabel: React.CSSProperties = { display: 'block', fontSize: 12, opacity: .72, margin: '13px 0 6px' };
+function getLocalISOStringFor(d: Date): string {
+  const offset = d.getTimezoneOffset();
+  const local = new Date(d.getTime() - offset * 60000);
+  const sign = offset > 0 ? '-' : '+';
+  return local.toISOString().replace('Z', '') + sign + pad2(Math.floor(Math.abs(offset) / 60)) + ':' + pad2(Math.abs(offset) % 60);
+}
+
+function MyWorkView({ theme }: { theme?: string }) {
+  const [weekOffset, setWeekOffset] = useState(0);
+  const [logs, setLogs] = useState<WorklogRow[]>([]);
+  const [userName, setUserName] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState('');
+  const [modal, setModal] = useState<WorklogRow | null | 'new'>(null);
+  const [newLogDate, setNewLogDate] = useState(isoDate(new Date()));
+  const [menuId, setMenuId] = useState('');
+  const [timerOpen, setTimerOpen] = useState(false);
+  const [timerSnapshot, setTimerSnapshot] = useState<{status: TimerState['status']; elapsed: number}>({status: 'idle', elapsed: 0});
+  const [timerPanelWidth, setTimerPanelWidth] = useState(0);
+  const isDark = theme?.startsWith('dark');
+  const monday = weekStart(new Date());
+  monday.setDate(monday.getDate() + weekOffset * 7);
+  const dates = Array.from({ length: 7 }, (_, i) => { const d = new Date(monday); d.setDate(d.getDate() + i); return d; });
+  const from = isoDate(dates[0]); const to = isoDate(dates[6]);
+  const load = useCallback(async () => {
+    setRefreshing(true); setError('');
+    try {
+      const userId = await hostApi.getUserId();
+      if (!userId) throw new Error('Не удалось определить текущего пользователя.');
+      let name = '';
+      try {
+        const me = await (trackerApi as any).v3.get['/myself']();
+        const user = (me as any)?.data || me;
+        name = user.display || user.name || [user.firstName, user.lastName].filter(Boolean).join(' ') || user.login || '';
+      } catch { /* name is optional */ }
+      if (name) setUserName(name);
+      const raw: any[] = [];
+      for (let page = 1; page <= 50; page++) {
+        const response = await (trackerApi as any).v3.get['/worklog']({ queryParams: { createdBy: userId, perPage: 100, page } });
+        const batch = (response as any)?.data || [];
+        raw.push(...batch);
+        if (batch.length < 100) break;
+      }
+      const keys = Array.from(new Set(raw.map((w: any) => extractIssueKey(w)).filter(Boolean)));
+      const issueMap: Record<string, any> = {};
+      for (let i = 0; i < keys.length; i += 100) {
+        const issuesResponse = await (trackerApi as any).v3.post['/issues/_search']({ bodyParams: { keys: keys.slice(i, i + 100), fields: ['summary', 'type'] } });
+        for (const issue of (issuesResponse as any)?.data || []) issueMap[issue.key] = issue;
+      }
+      const rows: WorklogRow[] = raw.map((w: any) => {
+        const issueKey = extractIssueKey(w);
+        const issue = issueMap[issueKey] || {};
+        const d = new Date(w.start);
+        return { id: String(w.id || w._id || ''), issueKey, summary: issue.summary || '', comment: w.comment || '', date: isoDate(d), durationMs: parseDurationToMs(w), type: issue.type?.key || '' };
+      }).filter((w: WorklogRow) => w.date >= from && w.date <= to);
+      setLogs(rows);
+    } catch (e: any) { setError(e?.message || 'Не удалось загрузить ворклоги'); }
+    finally { setLoading(false); setRefreshing(false); }
+  }, [from, to]);
+  useEffect(() => { load(); }, [load]);
+  const total = logs.reduce((sum, log) => sum + log.durationMs, 0);
+  const deleteLog = async (log: WorklogRow) => {
+    setRefreshing(true);
+    try {
+      await (trackerApi as any).v3.delete['/issues/{issue}/worklog/{id}']({ pathParams: { issue: log.issueKey, id: log.id } });
+      setLogs((current) => current.filter((item) => item.id !== log.id));
+      setMenuId('');
+    } catch (e: any) { setError(e?.message || 'Не удалось удалить ворклог'); }
+    finally { setRefreshing(false); }
+  };
+  const applySavedWorklog = useCallback((row: WorklogRow, previousId?: string) => {
+    setLogs((current) => {
+      const withoutPrevious = current.filter((item) => item.id !== previousId && item.id !== row.id);
+      if (row.date < from || row.date > to) return withoutPrevious;
+      return [...withoutPrevious, row].sort((a, b) => a.date.localeCompare(b.date));
+    });
+    setRefreshing(false);
+  }, [from, to]);
+  const weekLabel = weekOffset === 0 ? 'Текущая неделя' :
+    `${displayDate(dates[0])}.${String(dates[0].getFullYear()).slice(-2)} - ${displayDate(dates[6])}.${String(dates[6].getFullYear()).slice(-2)}`;
+  const dayNames = ['ПН', 'ВТ', 'СР', 'ЧТ', 'ПТ', 'СБ', 'ВС'];
+  const today = isoDate(new Date());
+  const logoUrl = '/logo.svg';
+  return (
+    <div style={{ padding: '16px 18px 18px', color: getTextColor(theme), height: 'calc(100vh - 49px)', minHeight: 0, boxSizing: 'border-box', display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 14, marginBottom: 12, flexShrink: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: '1 1 0', minWidth: 0 }}>
+          <button onClick={() => setWeekOffset((v) => v - 1)} style={weekArrow}>‹</button><span style={{ minWidth: 150, textAlign: 'center', fontSize: 13, fontWeight: 600 }}>{weekLabel}</span><button onClick={() => setWeekOffset((v) => v + 1)} style={weekArrow}>›</button>
+        </div>
+        <div style={{ flex: '1 1 auto', textAlign: 'center', fontSize: 16, fontWeight: 500, whiteSpace: 'nowrap' }}>
+          Затрачено времени <strong>{totalHoursLabel(total)}</strong> из 40 ч
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 12, flex: '1 1 0' }}>
+          {timerSnapshot.status !== 'idle' && <span className="timer-font" style={{ fontWeight: 700, color: '#FF6F00', fontSize: 14 }}>{formatTime(timerSnapshot.elapsed)}</span>}
+          <button onClick={() => setTimerOpen((v) => !v)} style={{ ...btnStyle, background: timerSnapshot.status !== 'idle' ? '#FF6F00' : (isDark ? '#343052' : '#F0EDFF'), color: timerSnapshot.status !== 'idle' ? '#fff' : 'inherit', border: '1px solid #8B7FE0', fontWeight: 650, padding: '9px 14px' }}>⏱ Таймер</button>
+        </div>
+      </div>
+      {(userName || refreshing) && <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10, flexShrink: 0, minHeight: 18 }}>
+        <div style={{ fontSize: 13, opacity: .75 }}>{userName}</div>
+        {refreshing && <span style={{ fontSize: 12, fontWeight: 400, opacity: .7 }}><span className="loading-spinner" /> Загрузка...</span>}
+      </div>}
+      {error && <div style={{ padding: 9, color: '#D64B4B', marginBottom: 8, flexShrink: 0 }}>{error} <button onClick={() => void load()} style={weekArrow}>Повторить</button></div>}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(150px, 1fr))', gap: 8, flex: 1, minHeight: 0, overflowX: 'auto', overflowY: 'hidden', alignItems: 'stretch', opacity: refreshing ? .62 : 1, transition: 'opacity .15s' }}>
+        {dates.map((date, index) => {
+          const day = isoDate(date);
+          const dayLogs = logs.filter((log) => log.date === day);
+          const dayTotal = dayLogs.reduce((sum, log) => sum + log.durationMs, 0);
+          const weekend = index >= 5;
+          return (
+            <div key={day} style={{ minWidth: 0, minHeight: 0, padding: 9, borderRadius: 10, background: day === today ? (isDark ? '#343052' : '#F0EDFF') : weekend ? (isDark ? '#343C47' : '#ECEEF2') : (isDark ? '#303741' : '#F7F7F8'), border: day === today ? '1px solid #8B7FE0' : '1px solid rgba(128,128,128,.12)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 5, fontSize: 12, fontWeight: 700, marginBottom: 4, flexShrink: 0 }}><span>{dayNames[index]} {displayDate(date)}</span><span style={{ opacity: .65, whiteSpace: 'nowrap' }}>{hoursLabel(dayTotal)}</span></div>
+              <div style={{ fontSize: 10, opacity: .55, margin: '8px 0', flexShrink: 0 }}>Ворклоги</div>
+              <div className="day-worklogs-scroll" style={{ overflowY: 'auto', minHeight: 0, flex: 1, paddingRight: 2 }}>
+                {dayLogs.map((log) => (
+				  <div
+				    key={log.id}
+				    className="worklog-card"
+				    onClick={(e) => {
+				      if ((e.target as HTMLElement).closest('a')) return;
+				      setModal(log);
+				    }}
+				    style={{
+				      position: 'relative',
+				      background: isDark ? '#424B58' : '#FFFFFF',
+				      border: '1px solid rgba(128,128,128,.16)',
+				      borderRadius: 7,
+				      padding: '8px 7px',
+				      marginBottom: 7,
+				      cursor: 'pointer',
+				      minWidth: 0
+				    }}
+				  >
+				    <div style={{
+				      fontSize: 12,
+				      fontWeight: 650,
+				      overflow: 'hidden',
+				      textOverflow: 'ellipsis',
+				      whiteSpace: 'nowrap',
+				      paddingRight: 18
+				    }}>
+				      {log.summary || log.issueKey}
+				    </div>
+				
+				    <div
+				      title={log.comment}
+				      style={{
+				        fontSize: 11,
+				        opacity: .65,
+				        overflow: 'hidden',
+				        textOverflow: 'ellipsis',
+				        whiteSpace: 'nowrap',
+				        margin: '4px 0 8px'
+				      }}
+				    >
+				      {log.comment || 'Без комментария'}
+				    </div>
+				
+				    <div style={{
+				      display: 'flex',
+				      alignItems: 'center',
+				      justifyContent: 'space-between',
+				      gap: 4,
+				      fontSize: 10
+				    }}>
+				      <a
+				        href={`https://tracker.yandex.ru/${log.issueKey}`}
+				        target="_blank"
+				        rel="noopener noreferrer"
+				        style={{
+				          color: '#7669C7',
+				          fontWeight: 500,
+				          textDecoration: 'none',
+				          overflow: 'hidden',
+				          textOverflow: 'ellipsis',
+				          cursor: 'pointer'
+				        }}
+				      >
+				        {log.type === 'bug' ? '🐞' : log.type === 'story' ? '📖' : '☑'} {log.issueKey}
+				      </a>
+				
+				      <strong style={{ whiteSpace: 'nowrap' }}>
+				        {hoursLabel(log.durationMs)}
+				      </strong>
+				    </div>
+				
+				    <button
+				      onClick={(e) => {
+				        e.stopPropagation();
+				        setMenuId(menuId === log.id ? '' : log.id);
+				      }}
+				      title="Опции"
+				      className="worklog-options"
+				      style={dotsButton}
+				    >
+				      ···
+				    </button>
+				
+				    {menuId === log.id && (
+				      <div
+				        onClick={(e) => e.stopPropagation()}
+				        style={{
+				          position: 'absolute',
+				          right: 5,
+				          top: 27,
+				          zIndex: 10,
+				          background: isDark ? '#242A32' : '#fff',
+				          boxShadow: '0 4px 16px rgba(0,0,0,.2)',
+				          borderRadius: 6,
+				          padding: 4
+				        }}
+				      >
+				        <button
+				          onClick={() => void deleteLog(log)}
+				          style={{ ...menuItem, color: '#D34B4B' }}
+				        >
+				          Удалить
+				        </button>
+				      </div>
+				  )}
+				</div>                ))}
+              </div>
+              <button onClick={() => { setNewLogDate(day); setModal('new'); }} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, width: '100%', padding: 8, marginTop: 7, flexShrink: 0, border: '1px dashed rgba(128,128,128,.45)', borderRadius: 7, background: 'transparent', color: 'inherit', opacity: .8, cursor: 'pointer', fontSize: 12 }}>
+                <img src={logoUrl} alt="" style={{ width: 17, height: 17, objectFit: 'contain' }} /><span style={{ fontSize: 18, lineHeight: 1 }}>+</span>
+              </button>
+            </div>
+          );
+        })}
+      </div>
+      {loading && <div style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', pointerEvents: 'none' }}>Загрузка...</div>}
+      <div style={{ position: 'absolute', inset: 0, zIndex: 50, display: timerOpen ? 'block' : 'none', pointerEvents: timerOpen ? 'auto' : 'none' }}>
+        <div onClick={() => setTimerOpen(false)} style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,.18)' }} />
+        <aside style={{ position: 'absolute', top: 0, right: 0, bottom: 0, width: timerPanelWidth > 0 ? 'min(60%, ' + Math.max(390, timerPanelWidth) + 'px)' : 'min(28%, 390px)', minWidth: 300, background: isDark ? '#343052' : '#F0EDFF', color: getTextColor(theme), boxShadow: '-12px 0 32px rgba(0,0,0,.2)', overflowY: 'auto' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 18px 0' }}><strong>⏱ Таймер</strong><button onClick={() => setTimerOpen(false)} style={weekArrow}>×</button></div>
+          <GlobalTimer theme={theme} onSnapshot={setTimerSnapshot} onWorklogSaved={load} onRequiredWidth={setTimerPanelWidth} />
+        </aside>
+      </div>
+      {modal && <WorklogModal theme={theme} initial={modal === 'new' ? undefined : modal} initialDate={newLogDate} onClose={() => setModal(null)} onSaved={applySavedWorklog} />}
+    </div>
+  );
+}
+const weekArrow: React.CSSProperties = { width: 30, height: 30, borderRadius: 7, border: '1px solid rgba(128,128,128,.3)', background: 'transparent', color: 'inherit', fontSize: 21, cursor: 'pointer', lineHeight: '20px' };
+const dotsButton: React.CSSProperties = { position: 'absolute', top: 3, right: 4, border: 0, borderRadius: 5, background: 'transparent', color: 'inherit', opacity: .55, cursor: 'pointer', padding: '0 4px', fontSize: 17 };
+const menuItem: React.CSSProperties = { border: 0, background: 'transparent', padding: '7px 12px', whiteSpace: 'nowrap', cursor: 'pointer', fontSize: 12 };
 // --- GlobalTimer ---
-function GlobalTimer() {
+function GlobalTimer({ theme, onSnapshot, onWorklogSaved, onRequiredWidth }: { theme?: string; onSnapshot?: (snapshot: {status: TimerState['status']; elapsed: number}) => void; onWorklogSaved?: () => Promise<void> | void; onRequiredWidth?: (width: number) => void }) {
+  const isDark = theme?.startsWith('dark') ?? false;
   const [state, setState] = useState<TimerState>({ status: 'idle', startedAt: null, accumulatedMs: 0, totalMs: 0 });
   const [displayMs, setDisplayMs] = useState(0);
   const [taskKey, setTaskKey] = useState('');
@@ -389,6 +936,23 @@ function GlobalTimer() {
   const submitMsRef = useRef(0);
   const tickRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const { loadState, saveState } = useTimerStorage('global_timer');
+  const buttonsRowRef = useRef<HTMLDivElement | null>(null);
+
+  // Измеряем фактическую ширину строки кнопок и сообщаем её наверх,
+  // чтобы боковая панель расширилась, если кнопки не помещаются.
+  useEffect(() => {
+    const el = buttonsRowRef.current;
+    if (!el || !onRequiredWidth) return;
+    const report = () => {
+      const w = el.scrollWidth;
+      if (w > 0) onRequiredWidth(Math.ceil(w) + 20 + 8); // + горизонтальные паддинги панели и запас
+    };
+    report();
+    if (typeof ResizeObserver === 'undefined') return;
+    const ro = new ResizeObserver(report);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [onRequiredWidth]);
 
   useEffect(() => {
     (async () => {
@@ -409,32 +973,44 @@ function GlobalTimer() {
     }
     return undefined;
   }, [state.status, state.startedAt, state.accumulatedMs]);
+  useEffect(() => {
+    const elapsed = state.status === 'running' && state.startedAt ? state.accumulatedMs + (Date.now() - state.startedAt) : state.accumulatedMs;
+    onSnapshot?.({ status: state.status, elapsed });
+  }, [state.status, state.startedAt, state.accumulatedMs, displayMs, onSnapshot]);
 
-  const handleStart = () => {
-    if (!taskKey.trim()) {
+  const handleStart = async () => {
+    const key = taskKey.trim().split(':')[0].trim().toUpperCase();
+    if (!key) {
       try { uiApi.toaster.add({ title: 'Укажите ключ задачи', theme: 'warning', content: 'Например TEST-123' }); }
       catch (e) { console.warn(e); }
       return;
     }
+    try {
+      if (!taskKey.includes(':')) {
+        const response = await (trackerApi as any).v3.post['/issues/_search']({ bodyParams: { keys: [key], fields: ['summary'] } });
+        const issue = ((response as any)?.data || [])[0];
+        if (issue?.summary) setTaskKey(`${key}: ${issue.summary}`);
+      }
+    } catch (e) { console.warn('Could not resolve task title:', e); }
     const ns: TimerState = { ...state, status: 'running', startedAt: Date.now() };
-    setState(ns); saveState(ns, taskKey);
+    setState(ns); saveState(ns, key);
   };
   const handlePause = () => {
     if (!state.startedAt) return;
     const elapsed = Date.now() - state.startedAt;
     const ns: TimerState = { ...state, status: 'paused', startedAt: null, accumulatedMs: state.accumulatedMs + elapsed };
-    setState(ns); saveState(ns, taskKey);
+    setState(ns); saveState(ns, taskKey.trim().split(':')[0].trim());
   };
   const handleResume = () => {
     const ns: TimerState = { ...state, status: 'running', startedAt: Date.now() };
-    setState(ns); saveState(ns, taskKey);
+    setState(ns); saveState(ns, taskKey.trim().split(':')[0].trim());
   };
   const handleStop = () => {
     let finalMs = state.accumulatedMs;
     if (state.status === 'running' && state.startedAt) finalMs += Date.now() - state.startedAt;
     submitMsRef.current = finalMs;
     const ns: TimerState = { status: 'idle', startedAt: null, accumulatedMs: finalMs, totalMs: state.totalMs + finalMs };
-    setState(ns); saveState(ns, taskKey);
+    setState(ns); saveState(ns, taskKey.trim().split(':')[0].trim());
     setShowForm(true); setComment(''); setErrorMsg('');
   };
 
@@ -445,16 +1021,18 @@ function GlobalTimer() {
     try {
       const duration = formatDurationISO(ms);
       const startISO = getLocalISOString();
-      console.log('Submitting worklog:', { issueKey: taskKey, duration, startISO, comment });
+      console.log('Submitting worklog:', { issueKey: taskKey.trim().split(':')[0].trim(), duration, startISO, comment });
       const res = await trackerApi.v3.post['/issues/{issue}/worklog']({
-        pathParams: { issue: taskKey },
+        pathParams: { issue: taskKey.trim().split(':')[0].trim() },
         bodyParams: { start: startISO, duration, comment: comment || undefined },
       });
       console.log('Worklog response:', res);
       setState({ status: 'idle', startedAt: null, accumulatedMs: 0, totalMs: state.totalMs });
-      saveState({ status: 'idle', startedAt: null, accumulatedMs: 0, totalMs: state.totalMs }, taskKey);
+      setTaskKey('');
+      await saveState({ status: 'idle', startedAt: null, accumulatedMs: 0, totalMs: state.totalMs }, '');
       setShowForm(false);
-      try { uiApi.toaster.add({ title: 'Время отправлено', theme: 'success', content: formatDuration(ms) + ' — ' + taskKey }); }
+      await onWorklogSaved?.();
+      try { uiApi.toaster.add({ title: 'Время отправлено', theme: 'success', content: formatDuration(ms) + ' - ' + taskKey.trim().split(':')[0].trim() }); }
       catch (te) { console.warn('Toaster:', te); }
     } catch (e: any) {
       const msg = e?.message || 'Не удалось отправить время';
@@ -469,35 +1047,41 @@ function GlobalTimer() {
   const isRunning = state.status === 'running';
   const isPaused = state.status === 'paused';
   const timerActive = isRunning || isPaused;
-  const submitMs = submitMsRef.current;
 
   return (
     <div style={{ padding: '24px 20px' }}>
       <label style={{ display: 'block', fontSize: '13px', marginBottom: '4px', opacity: 0.7 }}>Ключ задачи</label>
-      <input type="text" placeholder="TEST-123" value={taskKey}
-        onChange={(e) => setTaskKey(e.target.value.toUpperCase())} disabled={timerActive}
-        style={{ ...inputStyle, marginBottom: '20px', fontSize: '16px', fontWeight: 600, opacity: timerActive ? 0.5 : 1 }} />
-      <div className="timer-font" style={{ fontSize: '40px', fontWeight: 600, textAlign: 'center', marginBottom: '20px' }}>{formatTime(displayMs)}</div>
-      <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
-        {state.status === 'idle' && <button onClick={handleStart} style={{ ...btnStyle, padding: '10px 24px', fontSize: '15px' }}>▶ Старт</button>}
-        {isRunning && <button onClick={handlePause} style={{ ...btnStyle, padding: '10px 24px', fontSize: '15px' }}>⏸ Пауза</button>}
-        {isPaused && <button onClick={handleResume} style={{ ...btnStyle, padding: '10px 24px', fontSize: '15px' }}>▶ Продолжить</button>}
-        {timerActive && <button onClick={handleStop} style={{ ...btnStyle, padding: '10px 24px', fontSize: '15px' }}>⏹ Стоп</button>}
+      <div style={{ marginBottom: 40, opacity: timerActive ? 0.5 : 1 }}>
+        <TaskAutocomplete value={taskKey} onChange={(value) => setTaskKey(value.toUpperCase())}
+          onSelect={(issue) => setTaskKey(`${issue.key}: ${issue.summary}`)} disabled={timerActive} />
+      </div>
+      <div className="timer-font" style={{ fontSize: '40px', fontWeight: 600, textAlign: 'center', marginBottom: '30px' }}>{formatTime(displayMs)}</div>
+      <div ref={buttonsRowRef} style={{ display: 'flex', gap: '8px', justifyContent: 'center', flexWrap: 'nowrap' }}>
+        {state.status === 'idle' && <button onClick={handleStart} style={startBtnStyle}><PlayIcon /> Старт</button>}
+        {isRunning && <button onClick={handlePause} style={pauseBtnStyle}><PauseIcon /> Пауза</button>}
+        {isPaused && <button onClick={handleResume} style={resumeBtnStyle}><PlayOutlinedIcon /> Продолжить</button>}
+        {timerActive && <button onClick={handleStop} style={stopBtnStyle}><StopIcon /> Стоп</button>}
       </div>
       {state.status === 'idle' && displayMs === 0 && !showForm && (
-        <div style={{ marginTop: '24px', fontSize: '13px', opacity: 0.6, textAlign: 'center' }}>
+        <div style={{ marginTop: '36px', fontSize: '13px', opacity: 0.6, textAlign: 'center' }}>
           Введите ключ задачи и нажмите «Старт».<br />Таймер можно приостановить, нажав на кнопку «Пауза», а затем возобновить по кнопке «Продолжить».<br />После остановки по кнопке «Стоп» откроется панель для ввода комментария.
         </div>
       )}
       {showForm && (
-        <div style={{ marginTop: '32px', padding: '24px', background: 'rgba(255,255,255,0.15)', borderRadius: '12px' }}>
-          <div className="timer-font" style={{ fontSize: '32px', fontWeight: 600, textAlign: 'center', marginBottom: '16px' }}>{formatTime(submitMs)}</div>
+        <div style={{ marginTop: '32px', padding: '24px', background: isDark? 'rgba(255,255,255,0.15)' : '#DFD9FF', borderRadius: '12px', border: isDark ? undefined : '1px solid #B8B8C2' }}>
           {errorMsg && <div style={{ color: '#c62828', fontSize: '13px', padding: '8px', background: 'rgba(255,0,0,0.1)', borderRadius: '6px', marginBottom: '16px' }}>{errorMsg}</div>}
-          <div style={{ fontSize: '14px', opacity: 0.7, marginBottom: '12px' }}>Комментарий к работе:</div>
-          <input type="text" placeholder="Что было сделано?" value={comment} onChange={(e) => setComment(e.target.value)} style={inputStyle} autoFocus />
-          <div style={{ marginTop: '20px', display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
-            <Button view="flat" onClick={() => setShowForm(false)} disabled={submitting}>Отмена</Button>
-            <Button view="action" onClick={handleSubmit} disabled={submitting}>{submitting ? 'Отправка…' : 'Отправить'}</Button>
+          <div style={{ fontSize: '16px', fontWeight: 600, opacity: 1, marginBottom: '8px' }}>Комментарий к работе:</div>
+          <textarea
+		    value={comment}
+		    onChange={(e) => setComment(e.target.value)}
+		    placeholder="Ваш комментарий (над чем работаете, что сделано...)"
+		    rows={2}
+		    autoFocus
+		    style={{ ...getCommentFieldStyle(isDark), resize: 'vertical', minHeight: '52px', lineHeight: 1.5, fontFamily: 'inherit' }}
+		  />
+          <div style={{ marginTop: '20px', display: 'flex', gap: '12px', justifyContent: 'center' }}>
+            <button onClick={() => setShowForm(false)} disabled={submitting} style={cancelBtnStyle}>Отмена</button>
+            <button onClick={handleSubmit} disabled={submitting} style={submitBtnStyle}>{submitting ? 'Отправка…' : 'Отправить'}</button>
           </div>
         </div>
       )}
