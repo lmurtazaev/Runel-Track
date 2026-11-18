@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import {
   useTrackerPluginContext,
   trackerApi,
@@ -39,7 +39,7 @@ type TimerState = {
 };
 
 // --- Константы ---
-const BG_LIGHT = '#F4F4F6';
+const BG_LIGHT = '#FEFEFE';
 const BG_DARK = '#687381';
 const TEXT_LIGHT = '#494949';
 const TEXT_DARK = '#FFFFFF';
@@ -122,11 +122,11 @@ function formatDurationISO(ms: number): string {
 }
 
 function formatDuration(ms: number): string {
-  const totalSeconds = Math.floor(ms / 1000);
-  const hours = Math.floor(totalSeconds / 3600);
-  const minutes = Math.floor((totalSeconds % 3600) / 60);
-  if (hours > 0) return hours + 'h ' + minutes + 'm';
-  return minutes + 'm';
+  const totalMinutes = Math.floor(ms / 60000);
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  if (hours > 0) return hours + ' ч ' + minutes + ' м';
+  return minutes + ' м';
 }
 
 function getLocalISOString(): string {
@@ -689,7 +689,6 @@ function getLocalISOStringFor(d: Date): string {
 function MyWorkView({ theme }: { theme?: string }) {
   const [weekOffset, setWeekOffset] = useState(0);
   const [logs, setLogs] = useState<WorklogRow[]>([]);
-  const [userName, setUserName] = useState('');
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
@@ -709,13 +708,6 @@ function MyWorkView({ theme }: { theme?: string }) {
     try {
       const userId = await hostApi.getUserId();
       if (!userId) throw new Error('Не удалось определить текущего пользователя.');
-      let name = '';
-      try {
-        const me = await (trackerApi as any).v3.get['/myself']();
-        const user = (me as any)?.data || me;
-        name = user.display || user.name || [user.firstName, user.lastName].filter(Boolean).join(' ') || user.login || '';
-      } catch { /* name is optional */ }
-      if (name) setUserName(name);
       const raw: any[] = [];
       for (let page = 1; page <= 50; page++) {
         const response = await (trackerApi as any).v3.get['/worklog']({ queryParams: { createdBy: userId, perPage: 100, page } });
@@ -769,7 +761,7 @@ function MyWorkView({ theme }: { theme?: string }) {
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: '1 1 0', minWidth: 0 }}>
           <button onClick={() => setWeekOffset((v) => v - 1)} style={weekArrow}>‹</button><span style={{ minWidth: 150, textAlign: 'center', fontSize: 13, fontWeight: 600 }}>{weekLabel}</span><button onClick={() => setWeekOffset((v) => v + 1)} style={weekArrow}>›</button>
         </div>
-        <div style={{ flex: '1 1 auto', textAlign: 'center', fontSize: 16, fontWeight: 500, whiteSpace: 'nowrap' }}>
+        <div style={{ flex: '1 1 auto', textAlign: 'center', fontSize: 16, fontWeight: 400, whiteSpace: 'nowrap' }}>
           Затрачено времени <strong>{totalHoursLabel(total)}</strong> из 40 ч
         </div>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 12, flex: '1 1 0' }}>
@@ -777,11 +769,10 @@ function MyWorkView({ theme }: { theme?: string }) {
           <button onClick={() => setTimerOpen((v) => !v)} style={{ ...btnStyle, background: timerSnapshot.status !== 'idle' ? '#FF6F00' : (isDark ? '#343052' : '#F0EDFF'), color: timerSnapshot.status !== 'idle' ? '#fff' : 'inherit', border: '1px solid #8B7FE0', fontWeight: 650, padding: '9px 14px' }}>⏱ Таймер</button>
         </div>
       </div>
-      {(userName || refreshing) && <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10, flexShrink: 0, minHeight: 18 }}>
-        <div style={{ fontSize: 13, opacity: .75 }}>{userName}</div>
-        {refreshing && <span style={{ fontSize: 12, fontWeight: 400, opacity: .7 }}><span className="loading-spinner" /> Загрузка...</span>}
-      </div>}
-      {error && <div style={{ padding: 9, color: '#D64B4B', marginBottom: 8, flexShrink: 0 }}>{error} <button onClick={() => void load()} style={weekArrow}>Повторить</button></div>}
+      {refreshing && <div style={{ display: 'flex', alignItems: 'center', marginBottom: 10, flexShrink: 0, minHeight: 18 }}>
+		<span style={{ fontSize: 12, fontWeight: 400, opacity: .7 }}><span className="loading-spinner" /> Загрузка...</span>
+	  </div>}
+	  {error && <div style={{ padding: 9, color: '#D64B4B', marginBottom: 8, flexShrink: 0 }}>{error} <button onClick={() => void load()} style={weekArrow}>Повторить</button></div>}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(150px, 1fr))', gap: 8, flex: 1, minHeight: 0, overflowX: 'auto', overflowY: 'hidden', alignItems: 'stretch', opacity: refreshing ? .62 : 1, transition: 'opacity .15s' }}>
         {dates.map((date, index) => {
           const day = isoDate(date);
@@ -789,7 +780,7 @@ function MyWorkView({ theme }: { theme?: string }) {
           const dayTotal = dayLogs.reduce((sum, log) => sum + log.durationMs, 0);
           const weekend = index >= 5;
           return (
-            <div key={day} style={{ minWidth: 0, minHeight: 0, padding: 9, borderRadius: 10, background: day === today ? (isDark ? '#343052' : '#F0EDFF') : weekend ? (isDark ? '#343C47' : '#ECEEF2') : (isDark ? '#303741' : '#F7F7F8'), border: day === today ? '1px solid #8B7FE0' : '1px solid rgba(128,128,128,.12)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            <div key={day} style={{ minWidth: 0, minHeight: 0, padding: 9, borderRadius: 10, background: day === today ? (isDark ? '#343052' : '#F0EDFF') : weekend ? (isDark ? '#343C47' : '#ECEEF2') : (isDark ? '#303741' : '#F7F7F7'), border: day === today ? '1.4px solid #8B7FE0' : '1.5px solid rgba(128,128,128,.12)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', gap: 5, fontSize: 12, fontWeight: 700, marginBottom: 4, flexShrink: 0 }}><span>{dayNames[index]} {displayDate(date)}</span><span style={{ opacity: .65, whiteSpace: 'nowrap' }}>{hoursLabel(dayTotal)}</span></div>
               <div style={{ fontSize: 10, opacity: .55, margin: '8px 0', flexShrink: 0 }}>Ворклоги</div>
               <div className="day-worklogs-scroll" style={{ overflowY: 'auto', minHeight: 0, flex: 1, paddingRight: 2 }}>
@@ -1047,6 +1038,7 @@ function GlobalTimer({ theme, onSnapshot, onWorklogSaved, onRequiredWidth }: { t
   const isRunning = state.status === 'running';
   const isPaused = state.status === 'paused';
   const timerActive = isRunning || isPaused;
+  const timeColor = theme?.startsWith('dark') ? '#FFFFFF' : '#131962';
 
   return (
     <div style={{ padding: '24px 20px' }}>
@@ -1055,7 +1047,7 @@ function GlobalTimer({ theme, onSnapshot, onWorklogSaved, onRequiredWidth }: { t
         <TaskAutocomplete value={taskKey} onChange={(value) => setTaskKey(value.toUpperCase())}
           onSelect={(issue) => setTaskKey(`${issue.key}: ${issue.summary}`)} disabled={timerActive} />
       </div>
-      <div className="timer-font" style={{ fontSize: '40px', fontWeight: 600, textAlign: 'center', marginBottom: '30px' }}>{formatTime(displayMs)}</div>
+      <div className="timer-font" style={{ fontSize: '40px', color: timeColor, fontWeight: 600, textAlign: 'center', marginBottom: '30px' }}>{formatTime(displayMs)}</div>
       <div ref={buttonsRowRef} style={{ display: 'flex', gap: '8px', justifyContent: 'center', flexWrap: 'nowrap' }}>
         {state.status === 'idle' && <button onClick={handleStart} style={startBtnStyle}><PlayIcon /> Старт</button>}
         {isRunning && <button onClick={handlePause} style={pauseBtnStyle}><PauseIcon /> Пауза</button>}
@@ -1119,735 +1111,1320 @@ function generateDateRange(from: string, to: string): string[] {
   return dates;
 }
 
-const WEEKDAY_SHORT = ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
 const MONTH_NAMES = [
   'Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь',
   'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'
 ];
 
-function formatDateHeader(dateStr: string): string {
-  const d = new Date(dateStr + 'T00:00:00');
-  const wd = WEEKDAY_SHORT[d.getDay()];
-  return wd + ' ' + pad2(d.getDate()) + '.' + pad2(d.getMonth() + 1);
-}
-
-function isWeekend(dateStr: string): boolean {
-  const d = new Date(dateStr + 'T00:00:00');
-  return d.getDay() === 0 || d.getDay() === 6;
-}
-
-function isFullMonth(from: string, to: string): boolean {
-  const d1 = new Date(from + 'T00:00:00');
-  const d2 = new Date(to + 'T00:00:00');
-  if (d1.getDate() !== 1) return false;
-  const lastDay = new Date(d1.getFullYear(), d1.getMonth() + 1, 0).getDate();
-  return d2.getDate() === lastDay && d1.getMonth() === d2.getMonth() && d1.getFullYear() === d2.getFullYear();
-}
-
-function periodLabel(from: string, to: string): string {
-  if (isFullMonth(from, to)) {
-    const d = new Date(from + 'T00:00:00');
-    return MONTH_NAMES[d.getMonth()] + ' ' + d.getFullYear();
-  }
-  const fmt = (s: string) => {
-    const d = new Date(s + 'T00:00:00');
-    return pad2(d.getDate()) + '.' + pad2(d.getMonth() + 1) + '.' + d.getFullYear();
-  };
-  return fmt(from) + ' — ' + fmt(to);
-}
-
 // --- ReportsView ---
+// Модульные кеши: метаданные задач переживают перерисовки и смену периодов.
+const reportsIssueCache = new Map<string, any>();
+const reportsEpicFetched = new Set<string>();
+const reportsTeamsCache: { data: any[] | null } = { data: null };
+
+function reportsObjKey(o: any): string {
+  if (!o) return '';
+  if (typeof o === 'string') return o;
+  return o.key || o.id || '';
+}
+
+function reportsObjName(o: any): string {
+  if (!o) return '';
+  if (typeof o === 'string') return o;
+  return o.name || o.display || o.value || o.summary || '';
+}
+
+function reportsIsSubtaskMeta(meta: any): boolean {
+  if (!meta) return false;
+  const tk = String(reportsObjKey(meta.type) || '').toLowerCase();
+  const tn = String(reportsObjName(meta.type) || '').toLowerCase();
+  return tk === 'subtask' || tn.includes('подзадач') || tn.includes('sub-task') || tn.includes('subtask');
+}
+
+// Подзадачей считаем и задачу с родителем-задачей (не Epic/Story): в Трекере
+// подзадача может иметь обычный тип «Задача», связь видна только через parent.
+function reportsIsSubByParent(meta: any): boolean {
+  if (!meta) return false;
+  return !!reportsObjKey(meta.parent);
+}
+
+// Иконки типов (SVG в стилистике Трекера — API иконки не отдаёт)
+function reportsTypeIcon(tk: string, tn: string, size: number): any {
+  const k = String(tk || '').toLowerCase();
+  const n = String(tn || '').toLowerCase();
+  if (k === 'bug' || n.includes('ошиб') || n.includes('bug')) {
+    return (
+      <svg width={size} height={size} viewBox="0 0 16 16" style={{ flexShrink: 0, display: 'block' }}>
+        <circle cx="8" cy="8" r="6.2" fill="#E5484D" />
+        <path d="M8 4.2v7.6M4.6 6h6.8M4.6 10h6.8" stroke="#FFFFFF" strokeWidth="1.2" fill="none" />
+      </svg>
+    );
+  }
+  if (k === 'epic' || n.includes('эпик')) {
+    return (
+      <svg width={size} height={size} viewBox="0 0 16 16" style={{ flexShrink: 0, display: 'block' }}>
+        <circle cx="8" cy="8" r="6.2" fill="#F5A623" />
+        <path d="M3.8 11.5L6.6 5.2L8.8 8.8L10.4 6.6L12.2 11.5Z" fill="#FFFFFF" />
+      </svg>
+    );
+  }
+  if (k === 'story' || n.includes('истори') || n.includes('story')) {
+    return (
+      <svg width={size} height={size} viewBox="0 0 16 16" style={{ flexShrink: 0, display: 'block' }}>
+        <circle cx="8" cy="8" r="6.2" fill="#2BB673" />
+        <path d="M5.6 3.8h4.8v8l-2.4-1.8-2.4 1.8Z" fill="#FFFFFF" />
+      </svg>
+    );
+  }
+  if (k === 'subtask' || n.includes('подзадач') || n.includes('sub-task') || n.includes('subtask')) {
+    return (
+      <svg width={size} height={size} viewBox="0 0 16 16" style={{ flexShrink: 0, display: 'block' }}>
+        <circle cx="8" cy="8" r="6.2" fill="none" stroke="#8B7FE0" strokeWidth="1.3" strokeDasharray="2.5 2" />
+        <path d="M5 6.2h6M5 9.8h4" stroke="#8B7FE0" strokeWidth="1.4" strokeLinecap="round" />
+      </svg>
+    );
+  }
+  return (
+    <svg width={size} height={size} viewBox="0 0 16 16" style={{ flexShrink: 0, display: 'block' }}>
+      <circle cx="8" cy="8" r="6.2" fill="#4A7CF7" />
+      <path d="M5 8.2l2.1 2.1L11 5.9" stroke="#FFFFFF" strokeWidth="1.6" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function reportsTypeDisplayName(tk: string, tn: string): string {
+  const k = String(tk || '').toLowerCase();
+  if (k === 'task') return 'Задача';
+  if (k === 'bug') return 'Ошибка';
+  if (k === 'epic') return 'Epic';
+  if (k === 'story') return 'Story';
+  if (k === 'subtask') return 'Sub-task';
+  return tn || 'Другое';
+}
+
+// Цепочка задачи: эпик / стори / родительская задача / подзадача / fix version.
+// Чистый пересчёт из модульного кеша — не хранится в стейте, поэтому устаревших
+// или «призрачных» значений быть не может.
+function reportsComputeChain(issueKey: string) {
+  const selfMeta = reportsIssueCache.get(issueKey) || null;
+  let epicKey = '', epicSummary = '', storyKey = '', storySummary = '';
+  let taskKey = '', taskSummary = '', subtaskKey = '', subtaskSummary = '';
+  let fixVersion = selfMeta && selfMeta.fixVersions && selfMeta.fixVersions[0] ? reportsObjName(selfMeta.fixVersions[0]) : '';
+  if (selfMeta) {
+    const ek = reportsObjKey(selfMeta.epic);
+    if (ek) { epicKey = ek; epicSummary = reportsObjName(selfMeta.epic); }
+  }
+  if (reportsIsSubtaskMeta(selfMeta) || reportsIsSubByParent(selfMeta)) {
+    subtaskKey = issueKey;
+    subtaskSummary = (selfMeta && selfMeta.summary) || '';
+  }
+  let cur = issueKey, hops = 0;
+  while (cur && hops < 8) {
+    const meta = reportsIssueCache.get(cur);
+    if (!meta) break;
+    const tk = String(reportsObjKey(meta.type) || '').toLowerCase();
+    const isSub = reportsIsSubtaskMeta(meta) || reportsIsSubByParent(meta);
+    if (tk === 'story' && !storyKey) { storyKey = cur; storySummary = meta.summary || ''; }
+    if (tk === 'epic' && !epicKey) { epicKey = cur; epicSummary = meta.summary || ''; }
+    if (!isSub && !taskKey) { taskKey = cur; taskSummary = meta.summary || ''; }
+    const ek2 = reportsObjKey(meta.epic);
+    if (ek2 && !epicKey) {
+      const em = reportsIssueCache.get(ek2);
+      epicKey = ek2;
+      epicSummary = (em && em.summary) || reportsObjName(meta.epic) || '';
+    }
+    const pv = meta.fixVersions && meta.fixVersions[0] ? reportsObjName(meta.fixVersions[0]) : '';
+    if (pv && !fixVersion) fixVersion = pv;
+    const pk = reportsObjKey(meta.parent);
+    if (!pk) break;
+    cur = pk; hops++;
+  }
+  return {
+    _queue: selfMeta ? reportsObjKey(selfMeta.queue) || '' : '',
+    _typeKey: selfMeta ? reportsObjKey(selfMeta.type) || '' : '',
+    _typeName: selfMeta ? reportsObjName(selfMeta.type) || '' : '',
+    _epicKey: epicKey, _epicSummary: epicSummary,
+    _storyKey: storyKey, _storySummary: storySummary,
+    _taskKey: taskKey || issueKey,
+    _taskSummary: taskSummary || (selfMeta && selfMeta.summary) || '',
+    _subtaskKey: subtaskKey, _subtaskSummary: subtaskSummary,
+    _fixVersion: fixVersion,
+  };
+}
+
+const WEEKDAYS_RU: string[] = ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
+
+const reportsLevelNames: Record<string, string> = {
+  queue: 'Очередь',
+  employee: 'Сотрудник',
+  epic: 'Epic',
+  story: 'Story',
+  fixversion: 'Fix version',
+  task: 'Задача',
+  subtask: 'Sub-task',
+  worklog: 'Ворклог',
+};
+
+// Значение строки для уровня группировки. null = уровень к этой строке неприменим
+// (например, «Sub-task» у обычной задачи) — строка проходит на следующий уровень.
+function reportsLevelValue(row: any, level: string): { key: string; label: string; issueKey?: string; summary?: string } | null {
+  const c = row._chain;
+  switch (level) {
+    case 'queue': {
+      const q = c._queue || '—';
+      return { key: q, label: q };
+    }
+    case 'employee':
+      return { key: row._userLogin, label: row._userName || row._userLogin };
+    case 'epic':
+      return c._epicKey
+        ? { key: c._epicKey, label: c._epicKey, issueKey: c._epicKey, summary: c._epicSummary }
+        : { key: '—', label: '—' };
+    case 'story':
+      return c._storyKey
+        ? { key: c._storyKey, label: c._storyKey, issueKey: c._storyKey, summary: c._storySummary }
+        : { key: '—', label: '—' };
+    case 'fixversion': {
+      const v = c._fixVersion || '—';
+      return { key: v, label: v };
+    }
+    case 'task':
+      return { key: c._taskKey, label: c._taskKey, issueKey: c._taskKey, summary: c._taskSummary };
+    case 'subtask':
+      return c._subtaskKey
+        ? { key: c._subtaskKey, label: c._subtaskKey, issueKey: c._subtaskKey, summary: c._subtaskSummary }
+        : null;
+    case 'worklog':
+      return { key: row._wlId, label: '', issueKey: row._issueKey, summary: row._comment };
+  }
+  return null;
+}
+
+function reportsLeafNode(row: any) {
+  return {
+    level: 'worklog',
+    key: row._wlId,
+    label: '',
+    issueKey: row._issueKey,
+    summary: row._comment,
+    depth: 0,
+    children: [] as any[],
+    worklog: row,
+    ms: 0,
+    byDay: {} as Record<string, number>,
+  };
+}
+
+// Построение дерева. showWl = в группировке есть уровень «Ворклог»: только тогда
+// в таблицу попадают строки-комментарии. Иначе уровни заканчиваются строкой-задачей
+// (одна строка на задачу, суммы по дням — из её ворклогов). Уровень «Ворклог» не
+// группируется: сразу возвращает листья, иначе были бы группы-дубли строк.
+function reportsBuildTree(items: any[], levels: string[], showWl: boolean): any[] {
+  if (!levels.length) {
+    if (showWl) return items.map((r: any) => reportsLeafNode(r));
+    const map = new Map<string, { key: string; summary: string; rows: any[] }>();
+    for (const r of items) {
+      const k = r._issueKey || '—';
+      let g = map.get(k);
+      if (!g) {
+        g = { key: k, summary: r._chain._taskSummary || r._summary || '', rows: [] };
+        map.set(k, g);
+      }
+      g.rows.push(r);
+    }
+    return Array.from(map.values()).map((g) => ({
+      level: 'task',
+      key: g.key,
+      label: g.key,
+      issueKey: g.key,
+      summary: g.summary,
+      depth: 0,
+      children: [] as any[],
+      worklog: null,
+      ms: 0,
+      byDay: {} as Record<string, number>,
+      rows: g.rows,
+    }));
+  }
+  const lvl = levels[0];
+  const rest = levels.slice(1);
+  if (lvl === 'worklog') return items.map((r: any) => reportsLeafNode(r));
+  const groups = new Map<string, { v: any; rows: any[] }>();
+  const direct: any[] = [];
+  for (const row of items) {
+    const v = reportsLevelValue(row, lvl);
+    if (!v) { direct.push(row); continue; }
+    let g = groups.get(v.key);
+    if (!g) { g = { v, rows: [] }; groups.set(v.key, g); }
+    g.rows.push(row);
+  }
+  const nodes: any[] = Array.from(groups.values()).map((g) => {
+    // Последний уровень «Задача» сам является конечной строкой, без вложенного дубля.
+    const isFinalTask = lvl === 'task' && rest.length === 0 && !showWl;
+    return {
+      level: lvl,
+      key: g.v.key,
+      label: g.v.label,
+      issueKey: g.v.issueKey || '',
+      summary: g.v.summary || '',
+      depth: 0,
+      children: isFinalTask ? [] : reportsBuildTree(g.rows, rest, showWl),
+      worklog: null,
+      ms: 0,
+      byDay: {} as Record<string, number>,
+      ...(isFinalTask ? { rows: g.rows } : {}),
+    };
+  });
+  if (direct.length) nodes.push(...reportsBuildTree(direct, rest, showWl));
+  nodes.sort((a: any, b: any) => String(a.label).localeCompare(String(b.label), undefined, { numeric: true }));
+  return nodes;
+}
+
+// Суммы снизу вверх: свои строки (у листа-задачи) плюс дети; byDay накапливается
+// на каждом уровне — время по дням видно у задач, групп и подытогов.
+function reportsFinalizeTree(nodes: any[]): number {
+  let total = 0;
+  for (const n of nodes) {
+    let ms = 0;
+    const byDay: Record<string, number> = {};
+    const own: any[] = (n as any).rows || (n.worklog ? [n.worklog] : []);
+    for (const r of own) {
+      const wms = r._durationMs || 0;
+      ms += wms;
+      const day = r._startDate || '';
+      if (day) byDay[day] = (byDay[day] || 0) + wms;
+    }
+    if (n.children.length) ms += reportsFinalizeTree(n.children);
+    for (const c of n.children) {
+      for (const d in c.byDay) byDay[d] = (byDay[d] || 0) + c.byDay[d];
+    }
+    n.ms = ms;
+    n.byDay = byDay;
+    total += ms;
+  }
+  return total;
+}
+
+function reportsSortTree(nodes: any[]) {
+  nodes.sort((a: any, b: any) => {
+    const aw = !!a.worklog, bw = !!b.worklog;
+    if (aw !== bw) return aw ? 1 : -1;
+    if (aw) {
+      return String(a.worklog._startDate + (a.worklog._startHm || ''))
+        .localeCompare(String(b.worklog._startDate + (b.worklog._startHm || '')));
+    }
+    return String(a.label).localeCompare(String(b.label), undefined, { numeric: true });
+  });
+  for (const n of nodes) if (n.children.length) reportsSortTree(n.children);
+}
+
+
+
 function ReportsView({ theme }: { theme?: string }) {
+  const isDark = theme?.startsWith('dark') ?? false;
+  const panelBg = isDark ? '#303741' : '#FFFFFF';
+  const rowBg = isDark ? '#303741' : '#FFFFFF';
+  const altBg = isDark ? '#343C47' : '#FAFAFC';
+  const groupBg = isDark ? '#3A4655' : '#EEF1FA';
+  const lineColor = isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)';
+  const textMain = getTextColor(theme);
+  const textMuted = isDark ? 'rgba(255,255,255,0.55)' : 'rgba(0,0,0,0.7)';
+  const linkColor = isDark ? '#8B9BF4' : '#4A5BD4';
+
   const [worklogs, setWorklogs] = useState<any[]>([]);
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
   const [loading, setLoading] = useState(true);
-  const [debugInfo, setDebugInfo] = useState('');
-  const [selectedQueues, setSelectedQueues] = useState<Set<string>>(new Set());
-  const [queueFilterOpen, setQueueFilterOpen] = useState(false);
-  const fetchedRef = useRef(false);
-  const [viewMode, setViewMode] = useState<'table' | 'list'>('table');
-  const [showWorklogs, setShowWorklogs] = useState(true);
+  const [onlyMine, setOnlyMine] = useState(false);
+  const [metaVersion, setMetaVersion] = useState(0);
+  const fetchedRangeRef = useRef('');
 
-  // Init default date range = current month
+  const [selQueues, setSelQueues] = useState<Set<string>>(new Set());
+  const [selEmployees, setSelEmployees] = useState<Set<string>>(new Set());
+  const [selTeams, setSelTeams] = useState<Set<string>>(new Set());
+  const [selTypes, setSelTypes] = useState<Set<string>>(new Set());
+  const [openPanel, setOpenPanel] = useState('');
+  const [viewMode, setViewMode] = useState<'table' | 'list'>('table');
+  const [groupLevels, setGroupLevels] = useState<string[]>(['queue', 'employee', 'task']);
+  const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
+  const [teamsLoading, setTeamsLoading] = useState(true);
+
   useEffect(() => {
     const [f, t] = getMonthRange();
     setDateFrom(f);
     setDateTo(t);
   }, []);
 
-  // Fetch worklogs (once, not per date change)
+  const shiftMonth = (delta: number) => {
+    const d = new Date((dateFrom || '') + 'T00:00:00');
+    if (isNaN(d.getTime())) return;
+    d.setMonth(d.getMonth() + delta);
+    const y = d.getFullYear(), m = d.getMonth();
+    const first = new Date(y, m, 1);
+    const last = new Date(y, m + 1, 0);
+    setDateFrom(first.getFullYear() + '-' + pad2(first.getMonth() + 1) + '-' + pad2(first.getDate()));
+    setDateTo(last.getFullYear() + '-' + pad2(last.getMonth() + 1) + '-' + pad2(last.getDate()));
+  };
+
+  const monthLabel = useMemo(() => {
+    if (!dateFrom) return '';
+    const d = new Date(dateFrom + 'T00:00:00');
+    return MONTH_NAMES[d.getMonth()] + ' ' + d.getFullYear();
+  }, [dateFrom]);
+
+
+  // Загрузка всех доступных ворклогов без фильтра по createdAt.
+  // Фактический период отчета определяется только по дате start.
   useEffect(() => {
     if (!dateFrom || !dateTo) return;
-    if (fetchedRef.current) return;
-    fetchedRef.current = true;
-    console.log('[ReportsView] Starting data fetch...');
+
+    const rangeId = dateFrom + '|' + dateTo;
+    if (fetchedRangeRef.current === rangeId) return;
+
+    fetchedRangeRef.current = rangeId;
+    let cancelled = false;
+
+    setLoading(true);
+    setOnlyMine(false);
+
     (async () => {
       try {
-        // Получаем ID текущего пользователя напрямую из SDK хоста.
+        const loadStartedAt = performance.now();
         const userId = await hostApi.getUserId();
-        if (!userId) {
-          setDebugInfo('User ID не найден. Отправьте время хотя бы один раз — ID сохранится автоматически.');
-          setLoading(false);
-          return;
-        }
 
-        let allWorklogs: any[] = [];
-        let page = 1;
-        const perPage = 100;
-        let hasMore = true;
-        const maxPages = 50;
-        const seenIds = new Set<string>();
+        const fetchPages = async (createdBy?: string[]) => {
+          const perPage = 100;
+          const pageConcurrency = 10;
+          const seenIds = new Set<string>();
+          const out: any[] = [];
 
-        while (hasMore && page <= maxPages) {
-          const worklogsRes = await trackerApi.v3.get['/worklog']({
-            queryParams: { createdBy: [userId] as any, perPage, page } as any,
-          });
-          const batch = (worklogsRes as any)?.data || [];
-          if (batch.length === 0) { hasMore = false; break; }
-          let duplicates = 0;
-          for (const w of batch) {
-            const id = w.id || w._id || (w.self ? String(w.self).split('/').pop() : '');
-            if (id && seenIds.has(id)) { duplicates++; continue; }
-            if (id) seenIds.add(id);
-            allWorklogs.push(w);
-          }
-          console.log('Worklogs page', page, ': got', batch.length, 'dupes:', duplicates, 'total unique:', allWorklogs.length);
-          hasMore = batch.length === perPage && duplicates < batch.length;
-          page++;
-        }
-        console.log('Total unique worklogs:', allWorklogs.length);
+          const take = (batch: any[]) => {
+            for (const w of batch) {
+              const id = w.id || w.self;
 
-        if (allWorklogs.length === 0) {
-          setDebugInfo('Нет записей о затраченном времени.');
-          setLoading(false);
-          return;
-        }
+              if (id && seenIds.has(id)) continue;
+              if (id) seenIds.add(id);
 
-        // Fetch issue info
-        const issueKeysSet = new Set<string>();
-        for (const w of allWorklogs) {
-          const key = extractIssueKey(w);
-          if (key) issueKeysSet.add(key);
-        }
-        const issueKeys = Array.from(issueKeysSet);
-
-        const issuesRes = await trackerApi.v3.post['/issues/_search']({
-          bodyParams: { keys: issueKeys, orderAsc: false, order: 'updated', fields: ['summary', 'queue'] },
-        });
-        const issues = (issuesRes as any)?.data || [];
-
-        // Build issue lookup
-        const issueMap: Record<string, { key: string; summary: string; queue: string }> = {};
-        for (const issue of issues) {
-          issueMap[issue.key] = {
-            key: issue.key,
-            summary: issue.summary || '',
-            queue: (issue.queue && issue.queue.key) || '',
+              out.push(w);
+            }
           };
+
+          // Важно: здесь намеренно нет фильтра по датам.
+          // GET /worklog получает записи независимо от createdAt и start.
+          const qp = (page: number): any => {
+            const q: any = { perPage, page };
+            if (createdBy) q.createdBy = createdBy;
+            return q;
+          };
+
+          let page = 1;
+          let hasMore = true;
+
+          while (hasMore) {
+            const pageList: number[] = [];
+
+            for (let p = page; p < page + pageConcurrency; p++) {
+              pageList.push(p);
+            }
+
+            const results = await Promise.all(
+              pageList.map(async (p) => {
+                const response = await trackerApi.v3.get['/worklog']({
+                  queryParams: qp(p),
+                });
+                return (response as any)?.data || [];
+              })
+            );
+
+            for (const batch of results) {
+              take(batch);
+            }
+
+            // Если хотя бы одна страница неполная, следующей страницы нет.
+            hasMore = results.every((batch) => batch.length === perPage);
+            page += pageConcurrency;
+          }
+
+          return out;
+        };
+
+        const worklogsStartedAt = performance.now();
+        let all: any[] = [];
+        let usedFallback = false;
+
+        try {
+          all = await fetchPages();
+        } catch (eAll) {
+          console.log(
+            '[ReportsView] fetch-all failed, fallback to own:',
+            eAll
+          );
+
+          usedFallback = true;
+          all = await fetchPages([String(userId)]);
         }
 
-        // Attach issue info to worklogs and store
-        const enriched = allWorklogs.map((w) => {
-          const key = extractIssueKey(w);
-          const ms = parseDurationToMs(w);
-          let startDate = '';
-          if (w.start) {
-            const d = new Date(w.start);
-            startDate = d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate());
-          }
-          const info = issueMap[key] || { key, summary: '', queue: key.split('-')[0] || '' };
-          return { ...w, _issueKey: key, _durationMs: ms, _startDate: startDate, _queue: info.queue, _summary: info.summary, _comment: w.comment || '' };
+        if (usedFallback) setOnlyMine(true);
+        console.log('[ReportsView] timing: worklogs API', Math.round(performance.now() - worklogsStartedAt), 'ms');
+
+        if (cancelled) return;
+
+        // Фильтруем строго по дате фактической работы - w.start.
+        // createdAt не используется для определения периода отчета.
+        const filteredAll = all.filter((w: any) => {
+          if (!w.start) return false;
+
+          const d = new Date(w.start);
+          if (Number.isNaN(d.getTime())) return false;
+
+          const startDate =
+            d.getFullYear() +
+            '-' +
+            pad2(d.getMonth() + 1) +
+            '-' +
+            pad2(d.getDate());
+
+          return startDate >= dateFrom && startDate <= dateTo;
         });
 
-        // Debug: log total time
-        let totalMs = 0;
-        for (const w of enriched) totalMs += w._durationMs;
-        console.log('Total duration across all worklogs:', formatDuration(totalMs), '(' + enriched.length + ' worklogs)');
-        setWorklogs(enriched);
-      } catch (e) {
-        setDebugInfo('Ошибка: ' + (e as any)?.message);
-      } finally {
-      	console.log('useEffect: done, setting loading=false');
+        console.log(
+          '[ReportsView] worklogs loaded:',
+          all.length,
+          '| in selected start-date range:',
+          filteredAll.length,
+          usedFallback ? '(own only)' : '(all available)'
+        );
+
+        const lite = filteredAll.map((w: any) => {
+          const key = extractIssueKey(w);
+          const d = new Date(w.start);
+
+          return {
+            _wlId: String(w.id || w.self || Math.random()),
+            _issueKey: key,
+            _durationMs: parseDurationToMs(w),
+            _startDate:
+              d.getFullYear() +
+              '-' +
+              pad2(d.getMonth() + 1) +
+              '-' +
+              pad2(d.getDate()),
+            _startHm: pad2(d.getHours()) + ':' + pad2(d.getMinutes()),
+            _comment: w.comment || '',
+            _userLogin:
+              (w.createdBy &&
+                (w.createdBy.login || String(w.createdBy.id || ''))) ||
+              '—',
+            _userName:
+              (w.createdBy &&
+                (w.createdBy.display || w.createdBy.name)) ||
+              '—',
+          };
+        });
+
+        setWorklogs(lite);
         setLoading(false);
+
+        const bump = () => {
+          if (!cancelled) setMetaVersion((v) => v + 1);
+        };
+
+        // Метаданные загружаем только для задач из выбранного периода.
+        const keysSet = new Set<string>();
+
+        for (const w of filteredAll) {
+          const k = extractIssueKey(w);
+          if (k) keysSet.add(k);
+        }
+
+        const keys = Array.from(keysSet);
+        const metadataStartedAt = performance.now();
+
+		const enrichChunk = async (ck: string[]) => {
+		  if (!ck.length) return true;
+		
+		  try {
+		    const res = await trackerApi.v3.post['/issues/_search']({
+		      bodyParams: {
+		        keys: ck,
+		        perPage: 100,
+		        fields: ['summary', 'queue', 'type', 'fixVersions', 'parent', 'epic'],
+		      } as any,
+		    });
+		
+		    for (const it of (res as any)?.data || []) {
+		      if (it && it.key) reportsIssueCache.set(it.key, it);
+		    }
+		
+		    return true;
+		  } catch (e1) {
+		    // Повторяем запрос без epic, если API не принимает это поле
+		    try {
+		      const res2 = await trackerApi.v3.post['/issues/_search']({
+		        bodyParams: {
+		          keys: ck,
+		          perPage: 100,
+		          fields: ['summary', 'queue', 'type', 'fixVersions', 'parent'],
+		        } as any,
+		      });
+		
+		      for (const it of (res2 as any)?.data || []) {
+		        if (it && it.key) reportsIssueCache.set(it.key, it);
+		      }
+		
+		      return true;
+		    } catch (e2) {
+		      console.log('[ReportsView] enrich chunk failed:', e2);
+		      return false;
+		    }
+		  }
+		};
+		
+		// Этап 1: метаданные задач пакетами по 100 ключей,
+		// одновременно выполняем не более 3 запросов
+		for (let i = 0; i < keys.length; i += 300) {
+		  const chunks: string[][] = [];
+		
+		  for (let j = i; j < Math.min(i + 300, keys.length); j += 100) {
+		    chunks.push(keys.slice(j, j + 100));
+		  }
+		
+		  await Promise.all(chunks.map((chunk) => enrichChunk(chunk)));
+		  bump();
+		}
+		
+        console.log('[ReportsView] timing: direct issue metadata', Math.round(performance.now() - metadataStartedAt), 'ms', '| unique issues:', keys.length);
+        const parentsStartedAt = performance.now();
+
+		// Этап 2: расширяем родительские цепочки вверх,
+		// пока появляются новые ключи
+		for (let round = 0; round < 8; round++) {
+		  const missing = new Set<string>();
+		
+		  for (const k of keys) {
+		    let cur = k;
+		
+		    for (let h = 0; h < 8; h++) {
+		      const meta = reportsIssueCache.get(cur);
+		      if (!meta) break;
+		
+		      const pk = reportsObjKey(meta.parent);
+		      if (!pk) break;
+		
+		      if (!reportsIssueCache.has(pk)) {
+		        missing.add(pk);
+		      }
+		
+		      cur = pk;
+		    }
+		  }
+		
+		  const mList = Array.from(missing);
+		  if (!mList.length) break;
+		
+		  for (let i = 0; i < mList.length; i += 300) {
+		    const chunks: string[][] = [];
+		
+		    for (let j = i; j < Math.min(i + 300, mList.length); j += 100) {
+		      chunks.push(mList.slice(j, j + 100));
+		    }
+		
+		    await Promise.all(chunks.map((chunk) => enrichChunk(chunk)));
+		  }
+		
+		  bump();
+		}
+
+        console.log('[ReportsView] timing: parent chains', Math.round(performance.now() - parentsStartedAt), 'ms');
+        const epicsStartedAt = performance.now();
+
+        // Этап 3: эпики. У _search поле epic может не приходить — добираем полные задачи по ключам.
+        const tops = new Set<string>();
+        for (const k of keys) {
+          const c = reportsComputeChain(k);
+          if (c._taskKey) tops.add(c._taskKey);
+          if (c._epicKey) tops.add(c._epicKey);
+        }
+        // _search уже вернул метаданные большинства задач. Запрашиваем только
+        // отсутствующие ключи и делаем это пакетами через _search, а не отдельным
+        // GET /issues/{issue} для каждой задачи/эпика.
+        const toFetch = Array.from(tops).filter(
+          (k: string) => k && k !== '—' && !reportsIssueCache.has(k) && !reportsEpicFetched.has(k)
+        ).slice(0, 300);
+        const doneNow = new Set<string>();
+        for (let i = 0; i < toFetch.length; i += 100) {
+          const chunk = toFetch.slice(i, i + 100);
+          const ok = await enrichChunk(chunk);
+          for (const k of chunk) {
+            doneNow.add(k);
+            if (ok) reportsEpicFetched.add(k);
+          }
+          if (!ok) {
+            console.warn('[ReportsView] batch epic metadata fetch failed:', chunk);
+          }
+        }
+        if (doneNow.size) bump();
+
+        console.log('[ReportsView] timing: epic details', Math.round(performance.now() - epicsStartedAt), 'ms', '| fetched:', doneNow.size);
+        const teamsStartedAt = performance.now();
+        // Этап 4: команды очередей (для фильтра «Команды»)        
+        setTeamsLoading(true);
+        if (!reportsTeamsCache.data) {
+	      try {
+	        const res = await trackerApi.v3.get['/queues']({
+	          queryParams: {
+	            perPage: 1000,
+	            expand: 'team',
+	          } as any,
+	        });
+	
+	        const payload = (res as any)?.data ?? res;
+	
+	        if (Array.isArray(payload)) {
+	          reportsTeamsCache.data = payload;
+	          console.log('[ReportsView] queues loaded:', payload.length);
+	          console.log('[ReportsView] queues sample:', payload[0]);
+	        } else {
+	          console.error('[ReportsView] unexpected queues response:', res);
+	          reportsTeamsCache.data = null;
+	        }
+	      } catch (e) {
+	        console.error('[ReportsView] teams fetch failed:', e);
+	        reportsTeamsCache.data = null;
+	      }
+	    }
+	    setTeamsLoading(false);
+        console.log('[ReportsView] timing: queues/teams', Math.round(performance.now() - teamsStartedAt), 'ms');
+        console.log('[ReportsView] timing: total report load', Math.round(performance.now() - loadStartedAt), 'ms');
+	    bump();
+      
+      } catch (e) {
+        console.log('[ReportsView] load error:', e);
+        if (!cancelled) setLoading(false);
       }
     })();
+    return () => { cancelled = true; };
   }, [dateFrom, dateTo]);
 
-  // Navigation handlers
-  const handlePrev = () => {
-    const span = daysBetween(dateFrom, dateTo);
-    setDateFrom(addDays(dateFrom, -span));
-    setDateTo(addDays(dateTo, -span));
-  };
-  const handleNext = () => {
-    const span = daysBetween(dateFrom, dateTo);
-    setDateFrom(addDays(dateFrom, span));
-    setDateTo(addDays(dateTo, span));
-  };
+  // Производные данные: чистый пересчёт из кеша при каждом обновлении мета-данных.
+  const enriched = useMemo(() => {
+    return worklogs.map((w: any) => ({ ...w, _chain: reportsComputeChain(w._issueKey) }));
+  }, [worklogs, metaVersion]);
 
-  if (loading) return <div style={{ padding: '20px' }}>Загрузка…</div>;
-  if (worklogs.length === 0) return <div style={{ padding: '20px', color: '#666' }}>{debugInfo || 'Нет записей о затраченном времени.'}</div>;
-  if (!dateFrom || !dateTo) return <div style={{ padding: '20px' }}>Загрузка дат…</div>;
+  const queueOptions = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const r of enriched) { const q = r._chain._queue || '—'; if (!m.has(q)) m.set(q, q); }
+    return Array.from(m.keys()).sort((a: string, b: string) => a.localeCompare(b, undefined, { numeric: true }));
+  }, [enriched]);
 
-  // Filter worklogs by date range
-  const filtered = worklogs.filter((w) => w._startDate >= dateFrom && w._startDate <= dateTo);
+  const employeeOptions = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const r of enriched) if (!m.has(r._userLogin)) m.set(r._userLogin, r._userName || r._userLogin);
+    return Array.from(m.entries()).map(([k, v]: [string, any]) => ({ key: k, label: v })).sort((a: any, b: any) => a.label.localeCompare(b.label, 'ru'));
+  }, [enriched]);
 
-  // Generate date columns
-  const dates = generateDateRange(dateFrom, dateTo);
-
-  // Get all available queues from filtered worklogs
-  const allQueues = Array.from(new Set(filtered.map((w) => w._queue || '—'))).sort();
-  const activeQueues = selectedQueues.size === 0 ? allQueues : allQueues.filter((q) => selectedQueues.has(q));
-  const queueFiltered = filtered.filter((w) => activeQueues.includes(w._queue || '—'));
-
-  // Group by queue -> issue, with worklog entries
-  const queueMap: Record<string, Record<string, {
-    key: string;
-    summary: string;
-    byDay: Record<string, number>;
-    worklogs: { day: string; durationMs: number; comment: string }[];
-  }>> = {};
-  for (const w of queueFiltered) {
-    const queue = w._queue || '—';
-    const issueKey = w._issueKey || '?';
-    if (!queueMap[queue]) queueMap[queue] = {};
-    if (!queueMap[queue][issueKey]) {
-      queueMap[queue][issueKey] = { key: issueKey, summary: w._summary || '', byDay: {}, worklogs: [] };
+  const typeOptions = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const r of enriched) {
+      const tk = r._chain._typeKey;
+      const tn = reportsTypeDisplayName(tk, r._chain._typeName);
+      if (tk) m.set(tk, tn); else m.set('__none__', 'Другое');
     }
-    const day = w._startDate;
-    queueMap[queue][issueKey].byDay[day] = (queueMap[queue][issueKey].byDay[day] || 0) + w._durationMs;
-    if (day >= dateFrom && day <= dateTo) {
-      queueMap[queue][issueKey].worklogs.push({ day, durationMs: w._durationMs, comment: w._comment || '' });
+    return Array.from(m.entries()).map(([k, v]: [string, any]) => ({ key: k, label: v })).sort((a: any, b: any) => a.label.localeCompare(b.label, 'ru'));
+  }, [enriched]);
+
+  const teamOptions = useMemo(() => {
+    const list = reportsTeamsCache.data || [];
+    const byTeam = new Map<string, { key: string; label: string; members: string[]; queues: string[] }>();
+
+    const collectLogins = (value: any): string[] => {
+      if (!value) return [];
+      const source = Array.isArray(value) ? value :
+        (typeof value === 'object'
+          ? (value.users || value.members || value.teamUsers || value.memberships || value.staff || [])
+          : [value]);
+      if (!Array.isArray(source)) return [];
+      return source.map((u: any) => {
+        if (typeof u === 'string') return u;
+        return (
+		  u?.login ||
+		  u?.username ||
+		  u?.uid ||
+		  u?.id ||
+		  u?.user?.login ||
+		  u?.user?.uid ||
+		  u?.user?.id ||
+		  ''
+		);
+      }).filter(Boolean);
+    };
+    
+    for (const q of list) {
+      const qk = reportsObjKey(q);
+      if (!qk) continue;
+      const rawTeam = q.team || q.teamId || q.team_id;
+      const teams = Array.isArray(rawTeam) ? rawTeam : (rawTeam ? [rawTeam] : []);
+      const queueMembers = [
+        ...collectLogins(q.teamUsers),
+        ...collectLogins(q.team),
+      ];
+      if (!teams.length && queueMembers.length) {
+        const key = qk;
+        const current = byTeam.get(key) || { key, label: (reportsObjName(q) || qk) + ' (команда очереди)', members: [], queues: [] };
+        current.members = Array.from(new Set([...current.members, ...queueMembers]));
+        current.queues.push(qk);
+        byTeam.set(key, current);
+        continue;
+      }
+      for (const team of teams) {
+        const teamKey = reportsObjKey(team) || (typeof team === 'string' ? team : '');
+        if (!teamKey) continue;
+        const teamName = reportsObjName(team) || teamKey;
+        const members = collectLogins(team);
+        const current = byTeam.get(teamKey) || { key: teamKey, label: teamName, members: [], queues: [] };
+        current.members = Array.from(new Set([...current.members, ...members, ...queueMembers]));
+        if (!current.queues.includes(qk)) current.queues.push(qk);
+        byTeam.set(teamKey, current);
+      }
     }
-  }
-
-  // Sort queues alphabetically
-  const queues = Object.keys(queueMap).sort();
-
-  // Compute subtotals per queue per day
-  function queueDayTotal(queue: string, day: string): number {
-    let total = 0;
-    for (const issueKey of Object.keys(queueMap[queue])) {
-      total += queueMap[queue][issueKey].byDay[day] || 0;
-    }
-    return total;
-  }
-
-  function queueTotal(queue: string): number {
-    let total = 0;
-    for (const d of dates) total += queueDayTotal(queue, d);
-    return total;
-  }
-
-  // Grand totals per day
-  const grandDayTotals: Record<string, number> = {};
-  let grandTotal = 0;
-  for (const day of dates) {
-    grandDayTotals[day] = 0;
-    for (const q of queues) grandDayTotals[day] += queueDayTotal(q, day);
-    grandTotal += grandDayTotals[day];
-  }
-
-  // --- Styles ---
-  const COL_Q = 80;
-  const COL_K = 80;
-  const COL_N = 250;
-  const LEFT_T = COL_Q + COL_K + COL_N;
-
-  const isDark = theme?.startsWith('dark') ?? false;
+    return Array.from(byTeam.values()).map((t) => ({
+      ...t,
+      label: t.label + (t.queues.length ? ' (' + t.queues.length + ' очеред.)' : ''),
+    })).sort((a, b) => a.label.localeCompare(b.label, 'ru'));
+  }, [metaVersion]);
   
-  const tableColors = isDark
-    ? {
-		header: '#343B46',
-		subtotal: '#3B4653',
-		total: '#303944',
-		normal: '#424D5B',
-		worklog: '#38424F',
-		weekend: '#3A4552',
-		text: '#EFEFEF',
-		muted: 'rgba(255,255,255,0.6)',
-		border: 'rgba(130,130,130,1)',
-	  }
-	: {
-		header: '#E6E6E6',
-		subtotal: '#DCDCDC',
-		total: '#D0D0D0',
-		normal: '#E6E6E6',
-		worklog: '#F0F0F0',
-		weekend: '#F0F0F0',
-		text: '#2C2C2C',
-		muted: 'rgba(0,0,0,0.6)',
-		border: 'rgba(190,190,190,0.5)',
-	  };
-   
-  const BG_SUBTOTAL = tableColors.subtotal;
-  const BG_TOTAL = tableColors.total;
-  const BG_NORMAL = tableColors.normal;
-  const BG_WORKLOG = tableColors.worklog;
-  
-  const thStyle: React.CSSProperties = {
-    padding: '6px 10px',
-    borderBottom: `2px solid ${tableColors.border}`,
-    textAlign: 'left',
-    fontSize: '12px',
-    fontWeight: 600,
-    whiteSpace: 'nowrap',
-    position: 'sticky',
-    top: 0,
-    zIndex: 1,
-    backgroundColor: tableColors.header,
-    color: tableColors.text,
-  };
-  const thSticky = (left: number): React.CSSProperties => ({
-    ...thStyle,
-    position: 'sticky',
-    left,
-    zIndex: 3,
-    backgroundColor: tableColors.header,
-    color: tableColors.text,
-  });
-  const tdStyle: React.CSSProperties = {
-    padding: '4px 10px',
-    borderBottom: `1px solid ${tableColors.border}`,
-    fontSize: '12px',
-    whiteSpace: 'nowrap',
-    color: tableColors.text,
-  };
-  const tdSticky = (left: number, _bg: string): React.CSSProperties => ({
-    ...tdStyle,
-    position: 'sticky',
-    left,
-    zIndex: 2,
-    backgroundColor: tableColors.header,
-  });
-  const tdTime: React.CSSProperties = {
-    ...tdStyle,
-    textAlign: 'center',
-    fontVariantNumeric: 'tabular-nums',
-  };
-  const subtotalRowStyle: React.CSSProperties = {
-    backgroundColor: BG_SUBTOTAL,
-    color: tableColors.text,
-    fontWeight: 600,
+    console.log(
+	  '[ReportsView] teamUsers JSON:',
+	  JSON.stringify(reportsTeamsCache.data?.[0]?.teamUsers, null, 2)
+	);
+
+	console.log(
+	  '[ReportsView] teamOptions JSON:',
+	  JSON.stringify(teamOptions, null, 2)
+	);
+
+  const filteredRows = useMemo(() => {
+    return enriched.filter((r: any) => {
+      const c = r._chain;
+      if (selQueues.size && !selQueues.has(c._queue || '—')) return false;
+      if (selEmployees.size && !selEmployees.has(r._userLogin)) return false;
+      if (selTypes.size && !selTypes.has(c._typeKey || '__none__')) return false;
+      if (selTeams.size) {
+        let ok = false;
+        for (const t of teamOptions) {
+          if (!selTeams.has(t.key)) continue;
+          if (t.queues.includes(c._queue) || t.members.includes(r._userLogin)) { ok = true; break; }
+        }
+        if (!ok) return false;
+      }
+      return true;
+    });
+  }, [enriched, selQueues, selEmployees, selTeams, selTypes, teamOptions]);
+
+  const tree = useMemo(() => {
+    const t = reportsBuildTree(filteredRows, groupLevels, groupLevels.includes('worklog'));
+    reportsFinalizeTree(t);
+    reportsSortTree(t);
+    return t;
+  }, [filteredRows, groupLevels]);
+
+  const totalMs = useMemo(() => filteredRows.reduce((s: number, r: any) => s + (r._durationMs || 0), 0), [filteredRows]);
+
+  const flatRows = useMemo(() => {
+    const out: any[] = [];
+    const walk = (nodes: any[], depth: number, path: string) => {
+      for (const n of nodes) {
+        const id = (path ? path + '/' : '') + n.key;
+        n._depth = depth;
+        n._id = id;
+        out.push(n);
+        if (n.children.length && !collapsed.has(id)) walk(n.children, depth + 1, id);
+        if (depth === 0 && n.level !== 'worklog' && !n.worklog && n.ms > 0) {
+          out.push({
+            level: 'subtotal',
+            key: id + '/__sub__',
+            label: 'Подытог: ' + (n.label || ''),
+            issueKey: '',
+            summary: '',
+            depth: depth,
+            children: [] as any[],
+            worklog: null,
+            ms: n.ms,
+            byDay: n.byDay || {},
+            _id: id + '/__sub__',
+            _depth: depth,
+          });
+        }
+      }
+    };
+    walk(tree, 0, '');
+    return out;
+  }, [tree, collapsed]);
+
+  const days = useMemo(() => (dateFrom && dateTo ? generateDateRange(dateFrom, dateTo) : []), [dateFrom, dateTo]);
+
+  const toggleNode = (id: string) => {
+    setCollapsed((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
   };
 
-  const totalRowStyle: React.CSSProperties = {
-    backgroundColor: BG_TOTAL,
-    color: tableColors.text,
-    fontWeight: 700,
-    position: 'sticky' as const,
-    bottom: 0,
-    zIndex: 3,
+  const moveLevel = (idx: number, dir: number) => {
+    setGroupLevels((prev) => {
+      const next = [...prev];
+      const j = idx + dir;
+      if (j < 0 || j >= next.length) return prev;
+      const tmp = next[idx]; next[idx] = next[j]; next[j] = tmp;
+      return next;
+    });
+  };
+  const removeLevel = (lvl: string) => setGroupLevels((prev) => prev.filter((x: string) => x !== lvl));
+  const addLevel = (lvl: string) => setGroupLevels((prev) => (prev.includes(lvl) ? prev : [...prev, lvl]));
+
+  const issueLink = (key: string) => (
+    <a href={'https://tracker.yandex.ru/' + key} target="_blank" rel="noreferrer"
+       style={{ color: linkColor, textDecoration: 'none', whiteSpace: 'nowrap', fontWeight: 700 }} onClick={(e) => e.stopPropagation()}>
+      {key}
+    </a>
+  );
+
+  const markerFor = (n: any) => (
+    <span style={{ display: 'inline-block', width: 14, color: textMuted, fontSize: 10, flexShrink: 0 }}>
+      {n.children.length ? (collapsed.has(n._id) ? '▸' : '▾') : ''}
+    </span>
+  );
+
+  // Универсальная кнопка-фильтр с дропдауном
+  const renderFilterButton = (id: string, title: string, activeCount: number, content: any, disabled = false) => (
+    <div style={{ position: 'relative' }}>
+      <button disabled={disabled}
+        onClick={() => setOpenPanel(openPanel === id ? '' : id)}
+        style={{
+          padding: '7px 12px', border: '1px solid ' + lineColor, borderRadius: 8, cursor: disabled ? 'not-allowed' : 'pointer',
+          opacity: disabled ? 0.6 : 1,
+          fontSize: 13, background: openPanel === id ? groupBg : panelBg, color: textMain, whiteSpace: 'nowrap',
+        }}
+      >
+        {title}{activeCount > 0 ? ' (' + activeCount + ')' : ''} ▾
+      </button>
+      {openPanel === id && (
+        <div style={{
+          position: 'absolute', top: '110%', left: 0, zIndex: 60, minWidth: 250, maxHeight: 330, overflowY: 'auto',
+          background: panelBg, border: '1px solid ' + lineColor, borderRadius: 10, padding: '6px 0',
+          boxShadow: '0 8px 24px rgba(0,0,0,0.25)',
+        }}>
+          {content}
+        </div>
+      )}
+    </div>
+  );
+
+  const renderFilterOptions = (all: { key: string; label: string }[], selected: Set<string>, setter: (s: Set<string>) => void, iconOf?: (k: string) => any) => {
+    const items: any[] = [];
+    for (const opt of all) {
+      items.push(
+        <label key={opt.key} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '5px 12px', cursor: 'pointer', fontSize: 12, color: textMain }}>
+          <input type="checkbox" checked={selected.has(opt.key)}
+            onChange={() => {
+              const next = new Set(selected);
+              if (next.has(opt.key)) next.delete(opt.key); else next.add(opt.key);
+              setter(next);
+            }} />
+          {iconOf ? iconOf(opt.key) : null}
+          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{opt.label}</span>
+        </label>
+      );
+    }
+    return (
+      <>
+        <div style={{ display: 'flex', gap: 10, padding: '4px 12px 8px', borderBottom: '1px solid ' + lineColor }}>
+          <button style={{ ...btnStyle, padding: '3px 8px', fontSize: 11 }} onClick={() => setter(new Set(all.map((o: any) => o.key)))}>Все</button>
+          <button style={{ ...btnStyle, padding: '3px 8px', fontSize: 11 }} onClick={() => setter(new Set(all.filter((o: any) => !selected.has(o.key)).map((o) => o.key)))}>Инверсия</button>
+          <button style={{ ...btnStyle, padding: '3px 8px', fontSize: 11 }} onClick={() => setter(new Set())}>Сброс</button>
+        </div>
+        {items.length ? items : <div style={{ padding: '10px 12px', fontSize: 12, color: textMuted }}>Нет данных</div>}
+      </>
+    );
   };
 
-  const worklogRowStyle: React.CSSProperties = {
-    fontSize: '11px',
-    fontWeight: 400,
-    color: tableColors.muted,
-    backgroundColor: BG_WORKLOG,
-    fontStyle: 'normal',
+  const backdrop = openPanel ? (
+    <div style={{ position: 'fixed', inset: 0, zIndex: 55 }} onClick={() => setOpenPanel('')} />
+  ) : null;
+
+  const exportToCsv = () => {
+    // Экспортируем исходный набор за выбранный период, не filteredRows:
+    // фильтры и уровни группировки влияют только на отображение отчета.
+    const rows = enriched
+      .filter((r: any) => r._startDate >= dateFrom && r._startDate <= dateTo)
+      .sort((a: any, b: any) => String(a._startDate + (a._startHm || '')).localeCompare(String(b._startDate + (b._startHm || ''))));
+
+    const headers = [
+      'Очередь', 'Сотрудник', 'Логин сотрудника', 'Тип задачи',
+      'Epic - ключ', 'Epic - название', 'Story - ключ', 'Story - название',
+      'Fix version', 'Задача - ключ', 'Задача - название',
+      'Подзадача - ключ', 'Подзадача - название', 'ID ворклога',
+      'Дата', 'Время начала', 'Длительность, минуты', 'Длительность', 'Комментарий',
+    ];
+    const csvCell = (value: any) => {
+      const str = value == null ? '' : String(value);
+      return '"' + str.replace(/"/g, '""') + '"';
+    };
+    const csvRows = rows.map((r: any) => {
+      const c = r._chain || reportsComputeChain(r._issueKey);
+      const values = [
+        c._queue,
+        r._userName,
+        r._userLogin,
+        reportsTypeDisplayName(c._typeKey, c._typeName),
+        c._epicKey,
+        c._epicSummary,
+        c._storyKey,
+        c._storySummary,
+        c._fixVersion,
+        c._taskKey || r._issueKey,
+        c._taskSummary,
+        c._subtaskKey,
+        c._subtaskSummary,
+        r._wlId,
+        r._startDate,
+        r._startHm,
+        Math.round((r._durationMs || 0) / 60000),
+        formatDuration(r._durationMs || 0),
+        r._comment,
+      ];
+      return values.map(csvCell).join(',');
+    });
+    const csv = '\uFEFF' + [headers.map(csvCell).join(','), ...csvRows].join('\r\n');
+    // data: URL блокируется защитой навигации Трекера. Используем Blob URL.
+    // target=_blank просит браузер открыть загрузку вне iframe плагина, что
+    // помогает обойти ограничения frame-src для blob: в некоторых браузерах.
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'worklog-report_' + dateFrom + '_' + dateTo + '.csv';
+    link.style.display = 'none';
+    link.setAttribute('aria-hidden', 'true');
+    document.body.appendChild(link);
+    link.click();
+    window.setTimeout(() => {
+      if (link.parentNode) link.parentNode.removeChild(link);
+      URL.revokeObjectURL(url);
+    }, 5000);
   };
 
-  const navBtnStyle: React.CSSProperties = {
-    ...btnStyle,
-    padding: '4px 10px',
-    fontSize: '14px',
-    minWidth: '32px',
+  const groupLabel = groupLevels.map((l: string, i: number) => (i + 1) + '. ' + reportsLevelNames[l]).join(', ') || 'нет уровней';
+
+  // Закреплённые слева колонки: ширины и смещения
+  const LEFT_W = [130, 100, 260, 70];
+  const LEFT_OFF = [0, 130, 230, 490];
+  const renderNodeRow = (n: any, idx: number) => {
+    const indent = 8 + (n._depth || 0) * 18;
+    const isWl = n.level === 'worklog';
+    const isSubT = n.level === 'subtotal';
+    const bg = isSubT ? groupBg : (isWl ? rowBg : (idx % 2 === 1 ? altBg : rowBg));
+    const td: React.CSSProperties = { padding: '4px 8px', borderBottom: '1px solid ' + lineColor, borderRight: '1px solid ' + lineColor, fontSize: 12, color: textMain, maxWidth: 260 };
+    const tdR: React.CSSProperties = { ...td, textAlign: 'right', whiteSpace: 'nowrap' };
+    const tdL = (i: number, extra?: React.CSSProperties): React.CSSProperties => ({
+      ...td, position: 'sticky', left: LEFT_OFF[i], width: LEFT_W[i], minWidth: LEFT_W[i],
+      background: bg, zIndex: isSubT ? 4 : 2, ...(extra || {}),
+    });
+    const flexCell = { display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 } as any;
+    let queueCell: any = <span />;
+    let taskCell: any = <span />;
+    let nameCell: any = <span />;
+
+    if (isSubT) {
+      nameCell = <div style={{ ...flexCell, paddingLeft: indent }}><strong>{n.label}</strong></div>;
+    } else if (isWl) {
+      const showKey = !groupLevels.includes('task') && !groupLevels.includes('subtask');
+      taskCell = showKey && n.issueKey ? issueLink(n.issueKey) : null;
+      nameCell = (
+        <div style={{ ...flexCell, paddingLeft: indent }}>
+          <span style={{ color: '#2BB673', fontSize: 12, flexShrink: 0 }}>✔</span>
+          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: textMuted }}>
+            {n.summary || '(без комментария)'}
+          </span>
+        </div>
+      );
+    } else if (n.level === 'queue') {
+      queueCell = <div style={{ ...flexCell, paddingLeft: indent }}>{markerFor(n)}<strong>{n.label}</strong></div>;
+    } else if (n.level === 'employee') {
+      nameCell = <div style={{ ...flexCell, paddingLeft: indent }}>{markerFor(n)}<span>{n.label}</span></div>;
+    } else if (n.level === 'fixversion') {
+      nameCell = <div style={{ ...flexCell, paddingLeft: indent }}>{markerFor(n)}<span>{reportsLevelNames.fixversion}: {n.label}</span></div>;
+    } else {
+      taskCell = n.issueKey && n.issueKey !== '—' ? issueLink(n.issueKey) : <span style={{ color: textMuted }}>—</span>;
+      const mark = n.level === 'subtask' ? '↳ ' : '';
+      nameCell = (
+        <div style={{ ...flexCell, paddingLeft: indent }}>
+          {markerFor(n)}
+          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{mark + (n.summary || n.label || '')}</span>
+        </div>
+      );
+    }
+    return (
+      <tr key={n._id} style={{ background: bg, cursor: n.children.length ? 'pointer' : 'default' }}
+          onClick={() => { if (n.children.length) toggleNode(n._id); }}>
+        <td style={tdL(0, { maxWidth: LEFT_W[0] })}>{queueCell}</td>
+        <td style={tdL(1, { maxWidth: LEFT_W[1] })}>{taskCell}</td>
+        <td style={tdL(2, { maxWidth: LEFT_W[2] })}>{nameCell}</td>
+        <td style={tdL(3, { textAlign: 'right', borderRight: '4px solid ' + lineColor, whiteSpace: 'nowrap', maxWidth: 'none' })}>
+          <strong style={isSubT ? { fontWeight: 700 } : undefined}>{n.ms > 0 ? formatDuration(n.ms) : ''}</strong>
+        </td>
+        {days.map((d: string) => {
+          const weekend = [0, 6].includes(new Date(d + 'T00:00:00').getDay());
+          return <td key={d} style={{ ...(isSubT ? { ...tdR, fontWeight: 700 } : tdR), background: weekend ? 'rgba(255,100,100,0.1)' : bg }}>{n.byDay[d] ? formatDuration(n.byDay[d]) : ''}</td>;
+        })}
+      </tr>
+    );
+  };
+
+  const listColumns = '110px 90px minmax(145px, 0.9fr) 75px 88px 78px minmax(360px, 3fr)';
+  const listHeaderCell: React.CSSProperties = {
+    padding: '7px 8px', fontSize: 12, color: textMuted, fontWeight: 600,
+    borderBottom: '1px solid ' + lineColor, borderRight: '1px solid ' + lineColor,
+    whiteSpace: 'nowrap', background: panelBg,
+  };
+  const listCell: React.CSSProperties = {
+    padding: '5px 8px', minWidth: 0, borderRight: '1px solid ' + lineColor,
+    borderBottom: '1px solid ' + lineColor, boxSizing: 'border-box',
+  };
+  const renderListRow = (n: any) => {
+    const indent = (n._depth || 0) * 18;
+    const isWl = n.level === 'worklog';
+    if (n.level === 'subtotal') {
+      return (
+        <div key={n._id} style={{ display: 'grid', gridTemplateColumns: listColumns, alignItems: 'stretch', fontSize: 12, color: textMain, fontWeight: 700, borderTop: '1px solid ' + lineColor, background: groupBg }}>
+          <span style={listCell} /><span style={listCell} /><span style={{ ...listCell, paddingLeft: 8 + indent }}>{n.label}</span>
+          <span style={{ ...listCell, textAlign: 'right', whiteSpace: 'nowrap' }}>{formatDuration(n.ms)}</span><span style={listCell} /><span style={listCell} /><span style={listCell} />
+        </div>
+      );
+    }
+    if (isWl) {
+      const w = n.worklog;
+      return (
+        <div key={n._id} style={{ display: 'grid', gridTemplateColumns: listColumns, alignItems: 'stretch', fontSize: 12, color: textMuted, background: rowBg }}>
+          <span style={listCell} /><span style={listCell} /><span style={listCell} /><span style={listCell} />
+          <span style={{ ...listCell, whiteSpace: 'nowrap' }}>{w._startDate ? `${WEEKDAYS_RU[new Date(w._startDate + 'T00:00:00').getDay()]} ${w._startDate.slice(8, 10)}.${w._startDate.slice(5, 7)}` : ''}</span>
+          <span style={{ ...listCell, whiteSpace: 'nowrap', textAlign: 'right' }}>{formatDuration(w._durationMs)}</span>
+          <span title={w._comment} style={{ ...listCell, whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}><span style={{ color: '#2BB673', marginRight: 6 }}>✔</span>{w._comment || '(без комментария)'}</span>
+        </div>
+      );
+    }
+    const ownLogs: any[] = n.rows || [];
+    const issueKey = n.issueKey || (n.level === 'task' ? n.key : '');
+    const summary = n.summary || '';
+    const isTask = n.level === 'task' || (!!issueKey && n.level !== 'queue' && n.level !== 'employee');
+    const header = (
+      <div key={n._id} style={{ display: 'grid', gridTemplateColumns: listColumns, alignItems: 'stretch', fontSize: 12, color: textMain, fontWeight: n.children.length ? 600 : 500, background: n.level === 'queue' || n.level === 'employee' ? groupBg : 'transparent', cursor: n.children.length ? 'pointer' : 'default' }} onClick={() => { if (n.children.length) toggleNode(n._id); }}>
+        <span style={{ ...listCell, paddingLeft: 8 + indent }}>{n.level === 'queue' ? n.label : (isTask && ownLogs[0]?._chain?._queue) || ''}</span>
+        <span style={listCell}>{isTask && issueKey ? issueLink(issueKey) : ''}</span>
+        <span style={{ ...listCell, whiteSpace: 'normal', overflowWrap: 'anywhere' }}>{markerFor(n)}{n.level === 'employee' ? n.label : summary || (isTask ? n.label : '')}</span>
+        <strong style={{ ...listCell, textAlign: 'right', whiteSpace: 'nowrap' }}>{formatDuration(n.ms)}</strong>
+        <span style={{ ...listCell, color: textMuted, whiteSpace: 'nowrap' }}>{isTask && ownLogs.length ? `${ownLogs.length} ворклог(ов)` : ''}</span><span style={listCell} /><span style={listCell} />
+      </div>
+    );
+    if (!isTask || !ownLogs.length) return header;
+    const sortedLogs = [...ownLogs].sort((a, b) => String(b._startDate + (b._startHm || '')).localeCompare(String(a._startDate + (a._startHm || ''))));
+    return (
+      <React.Fragment key={n._id}>
+        {header}
+        {sortedLogs.map((w: any) => (
+          <div key={`${n._id}/${w._wlId}`} style={{ display: 'grid', gridTemplateColumns: listColumns, alignItems: 'stretch', fontSize: 12, color: textMuted, background: rowBg }}>
+            <span style={listCell} /><span style={listCell} /><span style={listCell} /><span style={listCell} />
+            <span style={{ ...listCell, whiteSpace: 'nowrap' }}>{w._startDate ? `${WEEKDAYS_RU[new Date(w._startDate + 'T00:00:00').getDay()]} ${w._startDate.slice(8, 10)}.${w._startDate.slice(5, 7)}` : ''}</span>
+            <span style={{ ...listCell, whiteSpace: 'nowrap', textAlign: 'right' }}>{formatDuration(w._durationMs)}</span>
+            <span title={w._comment} style={{ ...listCell, whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}><span style={{ color: '#2BB673', marginRight: 6 }}>✔</span>{w._comment || '(без комментария)'}</span>
+          </div>
+        ))}
+      </React.Fragment>
+    );
+  };
+
+  const panelOf = (id: string) => {
+    if (id === 'queues') return renderFilterOptions(queueOptions.map((q: string) => ({ key: q, label: q })), selQueues, setSelQueues);
+    if (id === 'employees') return renderFilterOptions(employeeOptions, selEmployees, setSelEmployees);
+    if (id === 'teams') return renderFilterOptions(teamOptions.map((t: any) => ({ key: t.key, label: t.label })), selTeams, setSelTeams);
+    if (id === 'types') {
+      return renderFilterOptions(typeOptions, selTypes, setSelTypes, (k: string) => reportsTypeIcon(k === '__none__' ? '' : k, k === '__none__' ? 'Другое' : reportsTypeDisplayName(k, ''), 14));
+    }
+    if (id === 'group') {
+      const available = Object.keys(reportsLevelNames).filter((l: string) => !groupLevels.includes(l));
+      return (
+        <>
+          <div style={{ padding: '6px 12px', fontSize: 11, color: textMuted }}>Уровни иерархии</div>
+          {groupLevels.length === 0 && <div style={{ padding: '4px 12px', fontSize: 12, color: textMuted }}>Уровни не выбраны</div>}
+          {groupLevels.map((l: string, i: number) => (
+            <div key={l} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '5px 12px', fontSize: 12, color: textMain }}>
+              <span style={{ color: textMuted, width: 22 }}>{i + 1}.</span>
+              <span style={{ flex: 1 }}>{reportsLevelNames[l]}</span>
+              <button title="Выше" style={{ ...btnStyle, padding: '2px 6px', fontSize: 11 }} onClick={() => moveLevel(i, -1)}>↑</button>
+              <button title="Ниже" style={{ ...btnStyle, padding: '2px 6px', fontSize: 11 }} onClick={() => moveLevel(i, 1)}>↓</button>
+              <button title="Убрать" style={{ ...btnStyle, padding: '2px 6px', fontSize: 11 }} onClick={() => removeLevel(l)}>✕</button>
+            </div>
+          ))}
+          {available.length > 0 && <div style={{ padding: '8px 12px 2px', fontSize: 11, color: textMuted, borderTop: '1px solid ' + lineColor }}>Добавить уровень</div>}
+          {available.map((l: string) => (
+            <div key={l} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '5px 12px', fontSize: 12, color: textMain }}>
+              <span style={{ flex: 1 }}>{reportsLevelNames[l]}</span>
+              <button title="Добавить" style={{ ...btnStyle, padding: '2px 8px', fontSize: 11 }} onClick={() => addLevel(l)}>＋</button>
+            </div>
+          ))}
+        </>
+      );
+    }
+    return null;
+  };
+
+  const thS: React.CSSProperties = {
+    padding: '5px 8px', textAlign: 'left', fontSize: 12, color: textMuted,
+    borderBottom: '1px solid ' + lineColor, whiteSpace: 'nowrap', position: 'sticky', top: 0, background: panelBg, zIndex: 2,
   };
 
   return (
-    <div style={{ padding: '16px' }}>
-      {/* Date navigation + Queue filter */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px', flexWrap: 'wrap' }}>
-        <button onClick={handlePrev} style={navBtnStyle} title="Предыдущий период">←</button>
-        <span style={{ fontSize: '14px', fontWeight: 600, minWidth: '160px', textAlign: 'center' }}>
-          {periodLabel(dateFrom, dateTo)}
-        </span>
-        <button onClick={handleNext} style={navBtnStyle} title="Следующий период">→</button>
-        <span style={{ margin: '0 4px', opacity: 0.5 }}>|</span>
-        <label style={{ fontSize: '12px', opacity: 0.7 }}>С:</label>
-        <input
-          type="date"
-          value={dateFrom}
-          onChange={(e) => setDateFrom(e.target.value)}
-          style={{ ...inputStyle, width: 'auto', fontSize: '12px', padding: '4px 8px' }}
-        />
-        <label style={{ fontSize: '12px', opacity: 0.7 }}>По:</label>
-        <input
-          type="date"
-          value={dateTo}
-          onChange={(e) => setDateTo(e.target.value)}
-          style={{ ...inputStyle, width: 'auto', fontSize: '12px', padding: '4px 8px' }}
-        />
-        <span style={{ margin: '0 4px', opacity: 0.5 }}>|</span>
-        {/* Queue filter */}
-        <div style={{ position: 'relative' }}>
-          <button
-            onClick={() => setQueueFilterOpen(!queueFilterOpen)}
-            style={{ ...btnStyle, padding: '4px 10px', fontSize: '12px' }}
-          >
-            Очереди {selectedQueues.size > 0 ? `(${selectedQueues.size})` : '(все)'} ▾
+    <div style={{ color: textMain, fontSize: 14, height: 'calc(100vh - 49px)', minHeight: 0, boxSizing: 'border-box', display: 'flex', flexDirection: 'column', overflow: 'hidden', padding: '0 8px' }}>
+      {backdrop}
+      {/* Период и фильтры — один ряд */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginTop: 16, marginBottom: 16, flexShrink: 0 }}>
+        <button style={weekArrow} onClick={() => shiftMonth(-1)}>‹</button>
+        <strong style={{ minWidth: 130, textAlign: 'center' }}>{monthLabel}</strong>
+        <button style={weekArrow} onClick={() => shiftMonth(1)}>›</button>
+        <input className={isDark ? 'theme-dark' : 'theme-light'} type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)}
+          style={{ ...inputStyle, textAlign: 'center', width: 150, fontSize: 13, padding: '5px 8px' }} />
+        <span style={{ color: textMuted }}>—</span>
+        <input className={isDark ? 'theme-dark' : 'theme-light'} type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)}
+          style={{ ...inputStyle, textAlign: 'center', width: 150, fontSize: 13, padding: '5px 8px' }} />
+        <span style={{ width: 1, height: 22, background: lineColor, flexShrink: 0 }} />
+        {renderFilterButton(
+		  'teams',
+		  'Команды',
+		  selTeams.size,
+		  panelOf('teams'),
+		  teamsLoading || teamOptions.length === 0
+		)}
+        {renderFilterButton('queues', 'Очереди', selQueues.size, panelOf('queues'))}
+        {renderFilterButton('employees', 'Сотрудники', selEmployees.size, panelOf('employees'))}
+        {renderFilterButton('types', 'Тип', selTypes.size, panelOf('types'))}
+        {(selQueues.size || selEmployees.size || selTeams.size || selTypes.size) > 0 ? (
+          <button style={{ ...btnStyle, padding: '4px 10px', fontSize: 11 }}
+            onClick={() => { setSelQueues(new Set()); setSelEmployees(new Set()); setSelTeams(new Set()); setSelTypes(new Set()); }}>
+            Сбросить фильтры
           </button>
-          {queueFilterOpen && (
-            <>
-              <div
-                style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 50 }}
-                onClick={() => setQueueFilterOpen(false)}
-              />
-              <div style={{
-                position: 'absolute', top: '100%', left: 0, zIndex: 51,
-                background: isDark ? '#343B46' : '#FFFFFF',
-                color: tableColors.text,
-                border: `1px solid ${tableColors.border}`,
-                borderRadius: '6px',
-                boxShadow: '0 4px 12px rgba(0,0,0,0.15)', maxHeight: '300px', overflowY: 'auto',
-                minWidth: '200px',
-              }}>
-                <div style={{ display: 'flex', gap: '8px', padding: '8px', borderBottom: '1px solid rgba(0,0,0,0.1)' }}>
-                  <button
-                    onClick={() => setSelectedQueues(new Set())}
-                    style={{ ...btnStyle, padding: '2px 8px', fontSize: '11px' }}
-                  >Все</button>
-                  <button
-                    onClick={() => {
-                      const next = new Set<string>();
-                      for (const q of allQueues) { if (!selectedQueues.has(q)) next.add(q); }
-                      setSelectedQueues(next);
-                    }}
-                    style={{ ...btnStyle, padding: '2px 8px', fontSize: '11px' }}
-                  >Инверсия</button>
-                </div>
-                {allQueues.map((q) => (
-                  <label key={q} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '4px 12px', cursor: 'pointer', fontSize: '12px' }}>
-                    <input
-                      type="checkbox"
-                      checked={selectedQueues.has(q)}
-                      onChange={(e) => {
-                        const next = new Set(selectedQueues);
-                        if (e.target.checked) next.add(q); else next.delete(q);
-                        setSelectedQueues(next);
-                      }}
-                    />
-                    {q}
-                  </label>
-                ))}
-              </div>
-            </>
-          )}
-        </div>
+        ) : null}
       </div>
 
-      {/* View mode switcher */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-        <button
-          onClick={() => setViewMode('table')}
-          style={{
-            ...btnStyle,
-            padding: '4px 12px',
-            fontSize: '12px',
-            fontWeight: viewMode === 'table' ? 600 : 400,
-            backgroundColor: viewMode === 'table' ? 'rgba(200,200,200,0.6)' : 'transparent',
-          }}
-        >
+      {/* Режимы и группировка */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 10, flexShrink: 0 }}>
+        <button onClick={() => setViewMode('table')}
+          style={{ ...btnStyle, background: viewMode === 'table' ? groupBg : panelBg, fontWeight: viewMode === 'table' ? 600 : 400 }}>
           Таблица
         </button>
-        <button
-          onClick={() => setViewMode('list')}
-          style={{
-            ...btnStyle,
-            padding: '4px 12px',
-            fontSize: '12px',
-            fontWeight: viewMode === 'list' ? 600 : 400,
-            backgroundColor: viewMode === 'list' ? 'rgba(200,200,200,0.6)' : 'transparent',
-          }}
-        >
+        <button onClick={() => setViewMode('list')}
+          style={{ ...btnStyle, background: viewMode === 'list' ? groupBg : panelBg, fontWeight: viewMode === 'list' ? 600 : 400 }}>
           Список
         </button>
-        {viewMode === 'table' && (
-		  <label
-		    style={{
-		      display: 'flex',
-		      alignItems: 'center',
-		      gap: '5px',
-		      marginLeft: '12px',
-		      fontSize: '12px',
-		      cursor: 'pointer',
-		      userSelect: 'none',
-		    }}
-		  >
-		    <input
-		      type="checkbox"
-		      checked={showWorklogs}
-		      onChange={(e) => setShowWorklogs(e.target.checked)}
-		    />
-		    Ворклог
-		  </label>
-		)}
+        <span style={{ width: 1, height: 22, background: lineColor }} />
+        <div style={{ position: 'relative' }}>
+          <button
+            onClick={() => setOpenPanel(openPanel === 'group' ? '' : 'group')}
+            style={{
+              padding: '7px 12px', border: '1px solid ' + lineColor, borderRadius: 8, cursor: 'pointer',
+              fontSize: 13, background: openPanel === 'group' ? groupBg : panelBg, color: textMain,
+              whiteSpace: 'nowrap', maxWidth: 360, overflow: 'hidden', textOverflow: 'ellipsis',
+            }}
+          >
+            Группировать по: {groupLabel} ▾
+          </button>
+          {openPanel === 'group' && (
+            <div style={{
+              position: 'absolute', top: '110%', left: 0, zIndex: 60, minWidth: 270, maxHeight: 330, overflowY: 'auto',
+              background: panelBg, border: '1px solid ' + lineColor, borderRadius: 10, padding: '6px 0',
+              boxShadow: '0 8px 24px rgba(0,0,0,0.25)',
+            }}>
+              {panelOf('group')}
+            </div>
+          )}
+        </div>
+        <button
+          type="button"
+          onClick={exportToCsv}
+          disabled={loading || !dateFrom || !dateTo || worklogs.length === 0}
+          style={{ ...btnStyle, marginLeft: 'auto', padding: '7px 13px', background: panelBg, border: '1px solid #FF6F00', fontWeight: 600, opacity: loading || worklogs.length === 0 ? 0.55 : 1, cursor: loading || worklogs.length === 0 ? 'not-allowed' : 'pointer' }}
+        >
+          Экспорт в CSV
+        </button>
       </div>
 
-      {/* Calendar table */}
-      {viewMode === 'table' && (
-      <div style={{ overflowX: 'auto', overflowY: 'auto', maxHeight: 'calc(100vh - 160px)' }}>
-        <table style={{ borderCollapse: 'collapse', width: '100%' }}>
-          <thead>
-            <tr>
-              <th style={thSticky(0)}>Очередь</th>
-              <th style={thSticky(COL_Q)}>Задача</th>
-              <th style={{ ...thSticky(COL_Q + COL_K), minWidth: COL_N + 'px', maxWidth: COL_N + 'px', overflow: 'hidden', textOverflow: 'ellipsis' }}>Название</th>
-              <th style={{ ...thSticky(LEFT_T), textAlign: 'center' }}>Итого</th>
-              {dates.map((d) => (
-                <th key={d} style={{ ...thStyle, textAlign: 'center', color: isWeekend(d) ? 'rgba(255,100,100,0.7)' : 'inherit' }}>
-                  {formatDateHeader(d)}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {queues.map((q) => {
-              const issueKeys = Object.keys(queueMap[q]).sort();
-              return (
-                <React.Fragment key={q}>
-                  {/* Subtotal row for queue */}
-                  <tr style={subtotalRowStyle}>
-                    <td style={tdSticky(0, BG_SUBTOTAL)}><strong>{q}</strong></td>
-                    <td style={tdSticky(COL_Q, BG_SUBTOTAL)}></td>
-                    <td style={{ ...tdSticky(COL_Q + COL_K, BG_SUBTOTAL), fontStyle: 'normal', opacity: 1 }}>Подытог:</td>
-                    <td style={{ ...tdSticky(LEFT_T, BG_SUBTOTAL), textAlign: 'center', fontVariantNumeric: 'tabular-nums' }}>
-                      <strong>{formatDuration(queueTotal(q))}</strong>
-                    </td>
-                    {dates.map((d) => {
-                      const val = queueDayTotal(q, d);
-                      return (
-                        <td key={d} style={{ ...tdTime, backgroundColor: tableColors.subtotal, fontWeight: 600, color: val === 0 ? 'rgba(128,128,128,0.3)' : 'inherit' }}>
-                          {val > 0 ? formatDuration(val) : '—'}
-                        </td>
-                      );
-                    })}
-                  </tr>
-                  {/* Task rows + worklog sub-rows */}
-                  {issueKeys.map((ik) => {
-                    const issue = queueMap[q][ik];
-                    let issueTotal = 0;
-                    for (const d of dates) issueTotal += issue.byDay[d] || 0;
-                    // Group worklogs by day
-                    const worklogsByDay: Record<string, typeof issue.worklogs> = {};
-                    for (const wl of issue.worklogs) {
-                      if (!worklogsByDay[wl.day]) worklogsByDay[wl.day] = [];
-                      worklogsByDay[wl.day].push(wl);
-                    }
-                    return (
-                      <React.Fragment key={ik}>
-                        <tr key={ik}>
-                          <td style={{ ...tdSticky(0, BG_NORMAL), opacity: 1 }}></td>
-                          
-                          <td style={tdSticky(COL_Q, BG_NORMAL)}>
-                            <a
-                              href={`https://tracker.yandex.ru/${ik}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              style={{
-                              	color: 'inherit',
-                              	textDecoration: 'underline',
-                              	textUnderlineOffset: '2px',
-                              }}
-                             >
-                               {ik}
-                             </a>
-                            </td>
-                          
-                          <td style={{ ...tdSticky(COL_Q + COL_K, BG_NORMAL), maxWidth: COL_N + 'px', overflow: 'hidden', textOverflow: 'ellipsis' }} title={issue.summary}>📌 {issue.summary}</td>
-                          <td style={{ ...tdSticky(LEFT_T, BG_NORMAL), textAlign: 'center', fontVariantNumeric: 'tabular-nums', fontWeight: 500 }}>
-                            {issueTotal > 0 ? formatDuration(issueTotal) : '—'}
-                          </td>
-                          {dates.map((d) => {
-                            const val = issue.byDay[d] || 0;
-                            return (
-                              <td key={d} style={{ ...tdTime, color: val === 0 ? 'rgba(128,128,128,0.25)' : 'inherit', backgroundColor: isWeekend(d) ? tableColors.weekend : 'transparent' }}>
-                                {val > 0 ? formatDuration(val) : '—'}
-                              </td>
-                            );
-                          })}
-                        </tr>
-                        {/* Worklog sub-rows */}
-                        {showWorklogs && dates.map((d) => {
-                          const dayWorklogs = worklogsByDay[d];
-                          if (!dayWorklogs || dayWorklogs.length === 0) return null;
-                          return dayWorklogs.map((wl, wi) => (
-                            <tr key={ik + '_wl_' + d + '_' + wi} style={worklogRowStyle}>
-                              <td style={tdSticky(0, BG_WORKLOG)}></td>
-                              <td style={tdSticky(COL_Q, BG_WORKLOG)}></td>
-                              
-                              <td
-                                style={{
-                                  ...tdSticky(COL_Q + COL_K, BG_WORKLOG),
-                                  maxWidth: COL_N + 'px',
-                                  overflow: 'hidden',
-                                  textOverflow: 'ellipsis',
-							      fontSize: '12px',
-								  fontWeight: 400,
-							      fontStyle: 'normal',
-							      color: tableColors.muted,
-							    }}
-								title={wl.comment || '(без комментария)'}
-                              >
-                                <span style={{ display: 'inline-block', width: '18px', marginLeft: '28px', color: '#35A56A', fontSize: '11px' }}>
-	                              ✓
-	                            </span>
-                                {wl.comment || '(без комментария)'}
-                              </td>
-                              <td style={tdSticky(LEFT_T, BG_WORKLOG)}></td>
-                              {dates.map((dd) => (
-                                <td key={dd} style={{ ...tdTime, ...worklogRowStyle, backgroundColor: isWeekend(dd) ? 'rgba(128,128,128,0.05)' : 'transparent' }}>
-                                  {dd === d ? formatDuration(wl.durationMs) : ''}
-                                </td>
-                              ))}
-                            </tr>
-                          ));
-                        })}
-                      </React.Fragment>
-                    );
-                  })}
-                </React.Fragment>
-              );
-            })}
-          </tbody>
-          <tfoot>
-            <tr style={totalRowStyle}>
-              <td style={{ ...tdSticky(0, BG_TOTAL), fontSize: '14px', fontWeight: 700, position: 'sticky' as const, bottom: 0, zIndex: 4 }}>
-                <strong>Итого:</strong>
-              </td>
-              <td style={{ ...tdSticky(COL_Q, BG_TOTAL), fontSize: '14px', fontWeight: 700, position: 'sticky' as const, bottom: 0, zIndex: 4 }}></td>
-              <td style={{ ...tdSticky(COL_Q + COL_K, BG_TOTAL), fontSize: '14px', fontWeight: 700, position: 'sticky' as const, bottom: 0, zIndex: 4 }}></td>
-              <td style={{ ...tdSticky(LEFT_T, BG_TOTAL), fontSize: '14px', fontWeight: 700, position: 'sticky' as const, bottom: 0, zIndex: 4, textAlign: 'center', fontVariantNumeric: 'tabular-nums' }}>
-                <strong>{formatDuration(grandTotal)}</strong>
-              </td>
-              {dates.map((d) => (
-                <td key={d} style={{ ...tdTime, backgroundColor: tableColors.total, fontSize: '14px', fontWeight: 700, position: 'sticky' as const, bottom: 0, zIndex: 3 }}>
-                  {grandDayTotals[d] > 0 ? formatDuration(grandDayTotals[d]) : '—'}
-                </td>
-              ))}
-            </tr>
-          </tfoot>
-        </table>
-      </div>
+      {onlyMine && (
+        <div style={{ padding: '6px 10px', marginBottom: 10, borderRadius: 8, fontSize: 12, background: groupBg, color: textMuted }}>
+          Показаны только ваши записи — недостаточно прав для просмотра чужих трудозатрат.
+        </div>
       )}
 
-      {/* List view - full comments */}
-      {viewMode === 'list' && (
-      <div style={{ overflowY: 'auto', maxHeight: 'calc(100vh - 160px)' }}>
-        <table style={{ borderCollapse: 'collapse', width: '100%', tableLayout: 'fixed' }}>
-          <thead>
-            <tr>
-              <th style={{ ...thSticky(0), width: '80px' }}>Очередь</th>
-              <th style={{ ...thSticky(COL_Q), width: '80px' }}>Задача</th>
-              <th style={{ ...thSticky(COL_Q + COL_K), width: '250px' }}>Название</th>
-              <th style={{ ...thSticky(LEFT_T), width: '70px', textAlign: 'center' }}>Итого</th>
-              <th style={{ ...thStyle, width: '100px' }}>Дата</th>
-              <th style={{ ...thStyle, width: '60px', textAlign: 'center' }}>Время</th>
-              <th style={{ ...thStyle }}>Комментарий</th>
-            </tr>
-          </thead>
-          <tbody>
-            {queues.map((q) => {
-              const issueKeys = Object.keys(queueMap[q]).sort();
-              return (
-                <React.Fragment key={q}>
-                  <tr style={subtotalRowStyle}>
-                    <td style={tdSticky(0, BG_SUBTOTAL)} colSpan={4}>
-                      <strong>{q}</strong> — {formatDuration(queueTotal(q))}
+      {loading ? (
+        <div style={{ padding: 20, color: textMuted, flex: 1, minHeight: 0 }}>
+          Загрузка отчёта… <span className="loading-spinner" />
+        </div>
+      ) : flatRows.length === 0 ? (
+        <div style={{ padding: 20, color: textMuted, flex: 1, minHeight: 0 }}>За выбранный период записей нет.</div>
+      ) : viewMode === 'table' ? (
+        <div style={{ overflow: 'auto', flex: 1, minHeight: 0, border: '1px solid ' + lineColor, borderRadius: 10, background: rowBg }}>
+          <table style={{ borderCollapse: 'separate', borderSpacing: 0, width: '100%', minWidth: 660 }}>
+            <thead>
+              <tr>
+                {['Очередь', 'Задача', 'Название'].map((h: string, i: number) => (
+                  <th key={h} style={{ ...thS, left: LEFT_OFF[i], width: LEFT_W[i], minWidth: LEFT_W[i], zIndex: 5, borderRight: '1px solid ' + lineColor, fontSize: 13 }}>{h}</th>
+                ))}
+                <th style={{ ...thS, textAlign: 'right', left: LEFT_OFF[3], width: LEFT_W[3], minWidth: LEFT_W[3], zIndex: 5, borderRight: '4px solid ' + lineColor, fontSize: 13 }}>Итого</th>
+                {days.map((d: string) => (
+                  <th key={d} style={{ ...thS, textAlign: 'right', zIndex: 3, borderRight: '1px solid ' + lineColor, background: [0, 6].includes(new Date(d + 'T00:00:00').getDay()) ? 'rgba(255,100,100,0.3)' : panelBg }}>
+                    <div style={{ color: [0, 6].includes(new Date(d + 'T00:00:00').getDay()) ? 'rgba(255,100,100,0.8)' : textMuted, fontSize: 13 }}>{WEEKDAYS_RU[new Date(d + 'T00:00:00').getDay()]}</div>
+                    <div>{d.slice(8, 10)}.{d.slice(5, 7)}</div>
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {flatRows.map((n: any, idx: number) => renderNodeRow(n, idx))}
+              <tr style={{ fontSize: 14, fontWeight: 700 }}>
+                <td style={{ position: 'sticky', bottom: 0, left: LEFT_OFF[0], width: LEFT_W[0], minWidth: LEFT_W[0], background: panelBg, borderBottom: '2px solid ' + lineColor, borderTop: '2px solid ' + lineColor, borderRight: '1px solid ' + lineColor, padding: '6px 8px', zIndex: 6 }}>ИТОГО</td>
+                <td style={{ position: 'sticky', bottom: 0, left: LEFT_OFF[1], width: LEFT_W[1], minWidth: LEFT_W[1], background: panelBg, borderBottom: '2px solid ' + lineColor, borderTop: '2px solid ' + lineColor, borderRight: '1px solid ' + lineColor, zIndex: 6 }} />
+                <td style={{ position: 'sticky', bottom: 0, left: LEFT_OFF[2], width: LEFT_W[2], minWidth: LEFT_W[2], background: panelBg, borderBottom: '2px solid ' + lineColor, borderTop: '2px solid ' + lineColor, borderRight: '1px solid ' + lineColor, zIndex: 6 }} />
+                <td style={{ position: 'sticky', bottom: 0, left: LEFT_OFF[3], width: LEFT_W[3], minWidth: LEFT_W[3], background: panelBg, borderBottom: '2px solid ' + lineColor, borderTop: '2px solid ' + lineColor, borderRight: '4px solid ' + lineColor, padding: '6px 8px', textAlign: 'right', whiteSpace: 'nowrap', zIndex: 6 }}>
+                  {formatDuration(totalMs)}
+                </td>
+                {days.map((d: string) => {
+                  let dayMs = 0;
+                  for (const r of filteredRows) if (r._startDate === d) dayMs += r._durationMs;
+                  return (
+                    <td key={d} style={{ position: 'sticky', bottom: 0, background: [0, 6].includes(new Date(d + 'T00:00:00').getDay()) ? 'rgba(255,100,100,0.1)' : panelBg, borderBottom: '2px solid ' + lineColor, borderTop: '2px solid ' + lineColor, borderRight: '1px solid ' + lineColor, padding: '6px 8px', textAlign: 'right', whiteSpace: 'nowrap', zIndex: 4 }}>
+                      {dayMs ? formatDuration(dayMs) : ''}
                     </td>
-                    <td style={{ backgroundColor: tableColors.subtotal, fontWeight: 600 }} colSpan={3}></td>
-                  </tr>
-                  {issueKeys.map((ik) => {
-                    const issue = queueMap[q][ik];
-                    let issueTotal = 0;
-                    for (const d of dates) issueTotal += issue.byDay[d] || 0;
-                    return (
-                      <React.Fragment key={ik}>
-                        <tr>
-                          <td style={{ ...tdSticky(0, BG_NORMAL), opacity: 1 }}></td>
-                          <td style={tdSticky(COL_Q, BG_NORMAL)}>
-						    <a
-						      href={`https://tracker.yandex.ru/${ik}`}
-						      target="_blank"
-						      rel="noopener noreferrer"
-						      style={{
-						        color: 'inherit',
-						        textDecoration: 'underline',
-						        textUnderlineOffset: '2px',
-						        cursor: 'pointer',
-						       }}
-						    >
-						      {ik}
-						    </a>
-						  </td>
-                          
-                          <td
-                            style={{
-                              ...tdSticky(COL_Q + COL_K, BG_NORMAL),
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis',
-                              whiteSpace: 'nowrap',
-                            }}
-                            title={issue.summary}
-                          >
-                            📌 {issue.summary}
-                          </td>
-                          <td style={{ ...tdSticky(LEFT_T, BG_NORMAL), textAlign: 'center', fontVariantNumeric: 'tabular-nums', fontWeight: 500 }}>
-                            {issueTotal > 0 ? formatDuration(issueTotal) : '—'}
-                          </td>
-                          <td style={{ ...tdStyle, color: tableColors.muted, fontSize: '11px' }} colSpan={3}>{issue.worklogs.length} ворклог(ов)</td>
-                        </tr>
-                        {issue.worklogs.map((wl, wi) => (
-                          <tr key={ik + '_wl_' + wi} style={worklogRowStyle}>
-                            <td style={tdSticky(0, BG_WORKLOG)}></td>
-                            <td style={tdSticky(COL_Q, BG_WORKLOG)}></td>
-                            <td style={tdSticky(COL_Q + COL_K, BG_WORKLOG)}></td>
-                            <td style={tdSticky(LEFT_T, BG_WORKLOG)}></td>
-                            <td style={{ ...tdStyle, fontSize: '12px', whiteSpace: 'nowrap' }}>
-                              {formatDateHeader(wl.day)}
-                            </td>
-                            <td style={{ ...tdTime, fontSize: '12px' }}>
-                              {formatDuration(wl.durationMs)}
-                            </td>
-                            <td
-                              style={{
-                              	...tdStyle,
-                              	fontSize: '12px',
-                              	fontWeight: 400,
-							    fontStyle: 'normal',
-							    whiteSpace: 'pre-wrap',
-							    wordBreak: 'break-word',
-							    lineHeight: '1.4',
-							    paddingLeft: '18px',
-                              }}
-                            >
-                              <span style={{ color: '#35A56A', marginRight: '6px' }}>
-                                ✓
-                              </span>
-                              {wl.comment || '(без комментария)'}
-                            </td>
-                          </tr>
-                        ))}
-                      </React.Fragment>
-                    );
-                  })}
-                </React.Fragment>
-              );
-            })}
-            <tr style={totalRowStyle}>
-              <td style={{ ...tdSticky(0, BG_TOTAL), fontSize: '14px', fontWeight: 700, position: 'sticky' as const, bottom: 0, zIndex: 4 }} colSpan={3}>
-                <strong>Итого:</strong>
-              </td>
-              <td style={{ ...tdSticky(LEFT_T, BG_TOTAL), fontSize: '14px', fontWeight: 700, position: 'sticky' as const, bottom: 0, zIndex: 4, textAlign: 'center', fontVariantNumeric: 'tabular-nums' }}>
-                <strong>{formatDuration(grandTotal)}</strong>
-              </td>
-              <td style={{ backgroundColor: tableColors.total, fontSize: '14px', fontWeight: 700, position: 'sticky' as const, bottom: 0, zIndex: 3}} colSpan={3}></td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+                  );
+                })}
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <div style={{ flex: 1, minHeight: 0, overflow: 'auto', border: '1px solid ' + lineColor, borderRadius: 10, background: rowBg }}>
+          <div style={{ minWidth: 1000 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: listColumns, position: 'sticky', top: 0, zIndex: 3, background: panelBg, borderBottom: '1px solid ' + lineColor }}>
+              {['Очередь', 'Задача', 'Название', 'Итого', 'Дата', 'Время', 'Комментарий'].map((label) => (
+                <div key={label} style={{ ...listHeaderCell, textAlign: label === 'Итого' || label === 'Время' ? 'right' : 'left' }}>{label}</div>
+              ))}
+            </div>
+            {flatRows.map((n: any) => renderListRow(n))}
+            <div style={{ display: 'grid', gridTemplateColumns: listColumns, position: 'sticky', bottom: 0, zIndex: 4, background: panelBg, fontSize: 14, fontWeight: 700, color: textMain, borderTop: '2px solid ' + lineColor }}>
+              <span style={{ ...listCell, background: panelBg }}>ИТОГО</span><span style={{ ...listCell, background: panelBg }} /><span style={{ ...listCell, background: panelBg }} />
+              <span style={{ ...listCell, background: panelBg, textAlign: 'right', whiteSpace: 'nowrap' }}>{formatDuration(totalMs)}</span>
+              <span style={{ ...listCell, background: panelBg }} /><span style={{ ...listCell, background: panelBg }} /><span style={{ ...listCell, background: panelBg }} />
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

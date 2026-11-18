@@ -1,7 +1,7 @@
 {
   "$schema": "./manifest.schema.json",
   "manifest_version": 1,
-  "version": "1.0.3",
+  "version": "1.0.4",
   "slug": "runel-track",
   "name": {
     "ru": "ВоркТаймер: Отчеты по времени",
@@ -60,11 +60,16 @@
       "tracker:issues:read",
       "tracker:issues:write",
       "tracker:worklog:read",
-      "tracker:worklog:write"
+      "tracker:worklog:write",
+      "tracker:queues:read",
+      "tracker:users:read"
     ],
     "ui": [
       "toaster"
-    ]
+    ],
+    "device": [
+	  "allow-downloads"
+	]
   },
   "docsUrl": "/docs/index.html",
   "supported_services": [
